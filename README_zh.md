@@ -4,6 +4,8 @@
 
 **[English](./README.md)** | **中文**
 
+**版本：v0.1.1**
+
 [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b) 的 ComfyUI 原生节点：多语言对话式 TTS、零样本语音克隆、内联情感/风格/韵律/音效标签、长文本分块、多说话人对话、Whisper 参考音频转写，以及 ComfyUI/AIMDO 显存追踪。
 
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Custom%20Node-orange)](https://github.com/comfyanonymous/ComfyUI)
@@ -47,6 +49,12 @@ python install.py
 
 `install.py` 不会修改 `torch`、`torchaudio` 或 `transformers`。本节点包与当前 ComfyUI 环境中已有的 Qwen3 和 Higgs Audio V2 分词器模块兼容。
 
+## Transformers 兼容性
+
+本节点包面向 Transformers **5.3.0 到 5.5.0**，推荐使用 **5.5.0**。
+
+实现方式不是依赖远程代码的 `AutoModel` 路径，而是在本地原生构建 Qwen3 主干网络、Higgs 音频 code 嵌入和输出头，直接映射 `model.safetensors` 权重。同时会规范化随包的 Higgs Audio V2 tokenizer 配置，移除旧版 Transformers 5.3.0 不接受的新元数据键，因此 5.3.0 到 5.5.0 都能工作。
+
 ## 模型文件
 
 将大检查点放置在：
@@ -75,7 +83,7 @@ ComfyUI/custom_nodes/Higgs_v3-TTS-ComfyUI/assets/higgs-audio-v3-tts-4b/
 ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 ```
 
-检查点大小约 **9.31 GB**。
+检查点磁盘大小约 **9.31 GB**。CUDA `bf16` 下 Higgs 模型/codec 路径大约需要 **11 GB VRAM**，另外还需要给 ComfyUI 和其他已加载模型留出余量。
 
 ## 节点
 
@@ -85,7 +93,7 @@ ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 | 参数 | 类型 | 默认值 | 说明 |
 |------|------|--------|------|
 | `model` | COMBO | `Higgs Audio v3 TTS 4B - bosonai (auto-download)` | 从 `ComfyUI/models/higgsv3tts/` 选择托管模型。 |
-| `dtype` | COMBO | `auto` | `auto`、`bf16`、`fp16`。`auto` 在支持 bf16 的 CUDA 上使用 bf16，否则 fp16，CPU 上使用 fp32。 |
+| `dtype` | COMBO | `auto` | `auto`、`bf16`。`auto` 在支持 bf16 的 CUDA 上使用 bf16，否则使用 fp32。`fp16` 已隐藏，因为它可能产生非有限音频样本。 |
 | `device` | COMBO | `auto` | `auto`、`cuda`、`cpu`。`auto` 跟随 ComfyUI 当前 torch 设备。 |
 | `attention` | COMBO | `auto` | `auto`、`sdpa`、`flash_attention`、`sageattention`。 |
 | `download_if_missing` | BOOLEAN | `True` | 缺失时自动下载小资产文件和大模型文件。 |
@@ -101,7 +109,7 @@ ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 |------|------|--------|------|
 | `higgs_model` | HIGGSV3TTS_MODEL | 必填 | Load Model 的输出。 |
 | `text` | STRING | 示例文本 | 要合成的文本。允许使用内联控制标签。 |
-| `max_new_tokens` | INT | `2048` | 每个块的最大音频 token 步数。输出截断时增大此值。 |
+| `max_new_tokens` | INT | `2048` | 每次生成的最大音频 token 步数。`2048` 大约对应 25-30 秒音频。 |
 | `temperature` | FLOAT | `1.0` | 采样多样性。`0` 为贪心；`0.8-1.1` 通常较自然。 |
 | `top_p` | FLOAT | `0.95` | 核采样。`1.0` 禁用。 |
 | `top_k` | INT | `50` | Top-K 码本采样。`0` 禁用。 |
@@ -111,8 +119,8 @@ ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 | `speed` | COMBO | `none` | 可选的全局语速韵律。 |
 | `pitch` | COMBO | `none` | 可选的全局音高韵律。 |
 | `expressiveness` | COMBO | `none` | 可选的全局表现力韵律。 |
-| `longform_chunking` | BOOLEAN | `True` | 在句子/停顿边界安全拆分长文本。 |
-| `words_per_chunk` | INT | `100` | 目标块大小。CJK 文本按字符计算。 |
+| `longform_chunking` | BOOLEAN | `True` | 在句子/停顿边界安全拆分长文本。关闭时节点只进行一次直接生成。 |
+| `words_per_chunk` | INT | `45` | 目标块大小。35-55 左右更适合 2048 token 默认值；CJK 文本按字符式分割。 |
 | `pause_between_chunks` | FLOAT | `0.15` | 块之间插入的静音时长（秒）。 |
 
 **输出：** `audio`（`AUDIO`）
@@ -131,6 +139,8 @@ ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 | 生成控制 | 同 Generate | | 与 Generate 相同的控制和长文本分块行为。 |
 
 参考音频清理为内部处理：启用裁剪，静音阈值 `-42 dB`，最大参考长度 `100s`。
+
+启用长文本分块时，Voice Clone 的每个块都会使用相同的原始 `reference_audio` 和 `reference_text`。关闭分块时，Clone 节点只进行一次直接生成，不调用分块器。
 
 **输出：** `audio`（`AUDIO`）
 
@@ -169,7 +179,7 @@ ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 |------|------|--------|------|
 | `audio` | AUDIO | 必填 | 要转写的参考音频。 |
 | `model` | COMBO | `whisper-large-v3-turbo (auto-download)` | Whisper 模型，存放在 `ComfyUI/models/audio_encoders/` 下。 |
-| `dtype` | COMBO | `auto` | `auto`、`fp16`、`bf16`、`fp32`。 |
+| `dtype` | COMBO | `auto` | `auto`、`bf16`、`fp32`。 |
 | `language` | COMBO | `auto` | 可选语言提示。 |
 | `task` | COMBO | `transcribe` | `transcribe` 保持源语言；`translate` 输出英文。 |
 | `chunk_length_s` | INT | `30` | Whisper 块长度。`0` 由 Transformers 自动选择。 |
@@ -271,6 +281,8 @@ WER/CER 在 5 到 10 之间，共 17 种语言：
 
 Higgs v3 上下文长度有限，长文本也可能达到 `max_new_tokens` 上限。分块适用于长篇叙述和对话。
 
+音频 codec 大约是每秒 75 个音频 token，因此 `max_new_tokens=2048` 不足以在单次生成中说完很长的文本。关闭分块时，如果文本所需音频 token 超过上限，模型可能在说完整段前停止。长文本建议开启分块，或为单次生成提高 `max_new_tokens`。
+
 分块器会：
 
 - 在句子结尾和 `<|prosody:pause|>` / `<|prosody:long_pause|>` 处拆分；
@@ -305,7 +317,7 @@ ComfyUI UI 进度条也会在块/轮次级别更新。
 | `auto` | 使用 PyTorch SDPA。 |
 | `sdpa` | 显式 PyTorch 缩放点积注意力。 |
 | `flash_attention` | 安装 `flash_attn` 后使用 Transformers FlashAttention 2 路径。 |
-| `sageattention` | 使用 SDPA 配置加运行时 SageAttention 补丁，适用于 CUDA FP16/BF16 张量。对于此逐 token 生成路径可能比 SDPA/FlashAttention 更慢，建议在自己的 GPU 上测试。 |
+| `sageattention` | 使用 SDPA 配置加运行时 SageAttention 补丁，适用于 CUDA BF16 张量。对于此逐 token 生成路径可能比 SDPA/FlashAttention 更慢，建议在自己的 GPU 上测试。 |
 
 如果可选注意力包未安装，选择它将引发清晰的错误。
 
@@ -313,7 +325,9 @@ ComfyUI UI 进度条也会在块/轮次级别更新。
 
 Higgs v3 和 Whisper 注册到 ComfyUI 模型管理中，以便内存工具检查真实张量驻留情况。
 
-没有专用卸载节点，也没有保持加载开关。更改模型、dtype、设备或注意力设置时，会先卸载之前的活跃模型包再加载新的。
+没有专用卸载节点，也没有保持加载开关。更改模型、dtype、设备或注意力设置时，会先硬卸载之前的活跃 Higgs 模型包再加载新的：注销 Comfy model patcher、清空 AIMDO 状态、将权重移到 meta、断开 bundle 引用、运行 Python GC，并请求 Comfy/PyTorch 清空加速器缓存。
+
+ComfyUI 的 offload 与硬卸载不同。offload 是把权重从 VRAM 移到 CPU RAM，以便同一个已加载节点下次运行时不用重新读取检查点。因此在仅 offload 时看到 CPU RAM 占用是预期行为，直到活跃 bundle 被硬卸载。
 
 ## 故障排除
 
@@ -331,7 +345,7 @@ model.safetensors
 
 ### 输出截断
 
-增大 `max_new_tokens`，或启用 `longform_chunking` 并降低 `words_per_chunk`。
+长文本请使用 `longform_chunking=True`。关闭分块时，节点现在会走一次直接生成，不再出现误导性的 `chunk 1/1` 路径；但如果文本需要的音频 token 超过 `max_new_tokens`，单次生成仍可能提前结束。可以提高 `max_new_tokens`，或在 2048 默认值下把 `words_per_chunk` 保持在 35-55 左右。
 
 ### 语音克隆效果不佳
 
@@ -347,4 +361,4 @@ model.safetensors
 
 ### 分块后内联控制被忽略
 
-在 v0.1.0 或更高版本中使用 `longform_chunking=True`。此版本在下拉控制设为 `none` 时会将活跃的演绎标签传递到后续块中。
+在 v0.1.1 或更高版本中使用 `longform_chunking=True`。此版本在下拉控制设为 `none` 时会将活跃的演绎标签传递到后续块中。

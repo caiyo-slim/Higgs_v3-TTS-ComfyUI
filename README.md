@@ -4,6 +4,8 @@
 
 **English** | **[中文](./README_zh.md)**
 
+**Version: v0.1.1**
+
 ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b): multilingual conversational TTS, zero-shot voice cloning, inline emotion/style/prosody/SFX tags, longform chunking, multi-speaker dialogue, Whisper reference transcription, and ComfyUI/AIMDO memory tracking.
 
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Custom%20Node-orange)](https://github.com/comfyanonymous/ComfyUI)
@@ -47,6 +49,12 @@ Restart ComfyUI after installing or updating.
 
 `install.py` does not modify `torch`, `torchaudio`, or `transformers`. The nodepack is built to work with the Qwen3 and Higgs Audio V2 tokenizer modules already present in this ComfyUI environment.
 
+## Transformers Compatibility
+
+This nodepack is built for Transformers **5.3.0 through 5.5.0**, with **5.5.0 recommended**.
+
+It works across that range by loading Higgs v3 natively instead of relying on a remote-code `AutoModel` path. The runtime builds the Qwen3 backbone plus the Higgs audio-code embedding/head modules directly, maps `model.safetensors` weights into those modules, and normalizes the bundled Higgs Audio V2 tokenizer config so Transformers 5.3.0 can instantiate the codec without choking on newer metadata keys.
+
 ## Model Files
 
 Place the large checkpoint here:
@@ -75,7 +83,7 @@ If `download_if_missing` is enabled and `model.safetensors` is absent, the loade
 ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b/
 ```
 
-The checkpoint is about **9.31 GB**.
+The checkpoint is about **9.31 GB** on disk. Expect roughly **11 GB VRAM** for the Higgs model/codec path with `bf16` on CUDA, plus extra headroom for ComfyUI and any other loaded models.
 
 ## Nodes
 
@@ -85,7 +93,7 @@ The checkpoint is about **9.31 GB**.
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
 | `model` | COMBO | `Higgs Audio v3 TTS 4B - bosonai (auto-download)` | Managed model choice from `ComfyUI/models/higgsv3tts/`. |
-| `dtype` | COMBO | `auto` | `auto`, `bf16`, `fp16`. `auto` uses bf16 on supported CUDA, fp16 otherwise, and fp32 on CPU. |
+| `dtype` | COMBO | `auto` | `auto`, `bf16`. `auto` uses bf16 on supported CUDA and fp32 otherwise. `fp16` is hidden because it can produce non-finite audio. |
 | `device` | COMBO | `auto` | `auto`, `cuda`, `cpu`. `auto` follows ComfyUI's current torch device. |
 | `attention` | COMBO | `auto` | `auto`, `sdpa`, `flash_attention`, `sageattention`. |
 | `download_if_missing` | BOOLEAN | `True` | Download missing small assets and the large model file if needed. |
@@ -101,7 +109,7 @@ The checkpoint is about **9.31 GB**.
 |-----------|------|---------|-------------|
 | `higgs_model` | HIGGSV3TTS_MODEL | required | Output from Load Model. |
 | `text` | STRING | example text | Text to synthesize. Inline control tags are allowed anywhere. |
-| `max_new_tokens` | INT | `2048` | Maximum audio-token steps per chunk. Increase if output cuts off. |
+| `max_new_tokens` | INT | `2048` | Maximum audio-token steps per single pass. `2048` is roughly 25-30 seconds of audio. |
 | `temperature` | FLOAT | `1.0` | Sampling variety. `0` is greedy; `0.8-1.1` is usually natural. |
 | `top_p` | FLOAT | `0.95` | Nucleus sampling. `1.0` disables it. |
 | `top_k` | INT | `50` | Top-K codebook sampling. `0` disables it. |
@@ -111,8 +119,8 @@ The checkpoint is about **9.31 GB**.
 | `speed` | COMBO | `none` | Optional whole-turn speed prosody. |
 | `pitch` | COMBO | `none` | Optional whole-turn pitch prosody. |
 | `expressiveness` | COMBO | `none` | Optional whole-turn expressiveness prosody. |
-| `longform_chunking` | BOOLEAN | `True` | Split long text safely at sentence/pause boundaries. |
-| `words_per_chunk` | INT | `100` | Target chunk size. For CJK-like scripts this acts more like characters. |
+| `longform_chunking` | BOOLEAN | `True` | Split long text safely at sentence/pause boundaries. When off, the node makes one direct generation call. |
+| `words_per_chunk` | INT | `45` | Target chunk size. Around 35-55 fits the 2048-token default better; CJK-like scripts use character-style splitting. |
 | `pause_between_chunks` | FLOAT | `0.15` | Silence inserted between generated chunks. |
 
 **Output:** `audio` (`AUDIO`)
@@ -131,6 +139,8 @@ The checkpoint is about **9.31 GB**.
 | generation controls | same as Generate | | Same controls and longform chunking behavior as Generate. |
 
 Reference cleanup is internal: trim enabled, silence threshold `-42 dB`, max reference length `100s`.
+
+When longform chunking is on, every clone chunk uses the same original `reference_audio` and `reference_text`. When chunking is off, the clone node does one direct pass and does not call the chunk splitter.
 
 **Output:** `audio` (`AUDIO`)
 
@@ -169,7 +179,7 @@ Speaker inputs are paired in order: `speaker_1_audio`, `speaker_1_reference_text
 |-----------|------|---------|-------------|
 | `audio` | AUDIO | required | Reference audio to transcribe. |
 | `model` | COMBO | `whisper-large-v3-turbo (auto-download)` | Whisper model stored under `ComfyUI/models/audio_encoders/`. |
-| `dtype` | COMBO | `auto` | `auto`, `fp16`, `bf16`, `fp32`. |
+| `dtype` | COMBO | `auto` | `auto`, `bf16`, `fp32`. |
 | `language` | COMBO | `auto` | Optional language hint. |
 | `task` | COMBO | `transcribe` | `transcribe` keeps source language; `translate` outputs English. |
 | `chunk_length_s` | INT | `30` | Whisper chunk length. `0` lets Transformers choose. |
@@ -271,6 +281,8 @@ That was perfect. <|sfx:laughter|>Haha, absolutely perfect.
 
 Higgs v3 has a finite context length, and long text can also hit `max_new_tokens`. Chunking is useful for long narration and dialogue.
 
+The audio codec is roughly 75 audio tokens per second, so `max_new_tokens=2048` is not enough for very long text in one pass. If chunking is off, the model may stop before the whole prompt is spoken. Use chunking for long clone/generation prompts, or raise `max_new_tokens` for longer single passes.
+
 The chunker:
 
 - splits at sentence endings and `<|prosody:pause|>` / `<|prosody:long_pause|>`;
@@ -305,7 +317,7 @@ The ComfyUI UI progress bar is also updated at chunk/turn level.
 | `auto` | Uses PyTorch SDPA. |
 | `sdpa` | Explicit PyTorch scaled-dot-product attention. |
 | `flash_attention` | Uses Transformers FlashAttention 2 path when `flash_attn` is installed. |
-| `sageattention` | Uses SDPA config plus a runtime SageAttention patch for CUDA FP16/BF16 tensors. It can be slower than SDPA/FlashAttention for this token-by-token generation path, so benchmark it on your GPU. |
+| `sageattention` | Uses SDPA config plus a runtime SageAttention patch for CUDA BF16 tensors. It can be slower than SDPA/FlashAttention for this token-by-token generation path, so benchmark it on your GPU. |
 
 If an optional attention package is not installed, selecting it raises a clear error.
 
@@ -313,7 +325,9 @@ If an optional attention package is not installed, selecting it raises a clear e
 
 Higgs v3 and Whisper are registered with ComfyUI model management so memory tools can inspect real tensor residency.
 
-There is no dedicated unload node and no keep-loaded toggle. Changing model, dtype, device, or attention settings unloads the previous active bundle before loading the new one.
+There is no dedicated unload node and no keep-loaded toggle. Changing model, dtype, device, or attention settings hard-unloads the previous active Higgs bundle before loading the new one: it unregisters the Comfy model patchers, clears AIMDO state, moves weights to meta, breaks bundle references, runs Python GC, and asks Comfy/PyTorch to empty accelerator caches.
+
+ComfyUI offload is different from hard unload. Offload frees VRAM by moving weights to CPU RAM so the same loaded node can run again without re-reading the checkpoint. That CPU RAM residency is expected until the active bundle is hard-unloaded.
 
 ## Troubleshooting
 
@@ -331,7 +345,7 @@ Small config/tokenizer assets are handled separately.
 
 ### Output cuts off
 
-Increase `max_new_tokens`, or enable `longform_chunking` and lower `words_per_chunk`.
+Use `longform_chunking=True` for long text. The node now avoids the misleading `chunk 1/1` path when chunking is off, but a single unchunked pass can still end early if the text needs more audio tokens than `max_new_tokens` allows. Raise `max_new_tokens` or keep `words_per_chunk` around 35-55 for the 2048 default.
 
 ### Voice clone sounds weak
 
@@ -347,4 +361,4 @@ Make sure the SFX tag is immediately followed by written sound text:
 
 ### Inline controls are ignored after chunking
 
-Use `longform_chunking=True` in v0.1.0 or newer. This version carries active delivery tags through chunks when dropdown controls are set to `none`.
+Use `longform_chunking=True` in v0.1.1 or newer. This version carries active delivery tags through chunks when dropdown controls are set to `none`.

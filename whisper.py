@@ -14,7 +14,7 @@ from .loader import register_runtime_module, resume_runtime_module
 
 logger = logging.getLogger("Higgs_v3-TTS-ComfyUI")
 
-WHISPER_DTYPE_OPTIONS = ["auto", "fp16", "bf16", "fp32"]
+WHISPER_DTYPE_OPTIONS = ["auto", "bf16", "fp32"]
 WHISPER_TASK_OPTIONS = ["transcribe", "translate"]
 WHISPER_LANGUAGE_OPTIONS = [
     "auto",
@@ -149,12 +149,10 @@ def _resolve_device() -> str:
 def _resolve_dtype(dtype: str, device: str) -> torch.dtype:
     if dtype == "auto":
         if device.startswith("cuda"):
-            return torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+            return torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32
         if device.startswith("xpu"):
             return torch.bfloat16
         return torch.float32
-    if dtype == "fp16":
-        return torch.float16
     if dtype == "bf16":
         return torch.bfloat16
     if dtype == "fp32":
@@ -242,7 +240,7 @@ class HiggsV3WhisperTranscribe:
                 ),
                 "dtype": (
                     WHISPER_DTYPE_OPTIONS,
-                    {"default": "auto", "tooltip": "Whisper precision. auto picks a GPU-friendly dtype or fp32 on CPU."},
+                    {"default": "auto", "tooltip": "Whisper precision. auto uses bf16 on supported CUDA/XPU and fp32 otherwise."},
                 ),
                 "language": (
                     WHISPER_LANGUAGE_OPTIONS,

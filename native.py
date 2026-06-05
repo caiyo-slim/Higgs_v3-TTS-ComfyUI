@@ -7,6 +7,7 @@ import json
 import logging
 import math
 import os
+import re
 from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -37,6 +38,7 @@ AUDIO_PLACEHOLDER_ID = -100
 SAMPLE_RATE = 24_000
 CODEC_PREFIX = "tied.embedding.modality_embeddings.0.model."
 CODEC_CONFIG_PATH = Path(__file__).resolve().parent / "assets" / "higgs_audio_v2_tokenizer_config.json"
+CONTROL_TAG_RE = re.compile(r"<\|[^|]+\|>")
 
 
 def _text_progress_bar(current: int, total: int, width: int = 24) -> str:
@@ -44,6 +46,32 @@ def _text_progress_bar(current: int, total: int, width: int = 24) -> str:
     current = max(0, min(int(current), total))
     filled = round(width * current / total)
     return "[" + "#" * filled + "-" * (width - filled) + "]"
+
+
+def _is_cjk_like(char: str) -> bool:
+    cp = ord(char)
+    return (
+        0x4E00 <= cp <= 0x9FFF
+        or 0x3400 <= cp <= 0x4DBF
+        or 0x3040 <= cp <= 0x30FF
+        or 0xAC00 <= cp <= 0xD7AF
+        or 0x0E00 <= cp <= 0x0E7F
+        or 0x1000 <= cp <= 0x109F
+    )
+
+
+def _estimate_min_audio_tokens(text: str, max_new_tokens: int, num_codebooks: int) -> int:
+    clean = CONTROL_TAG_RE.sub(" ", text)
+    wordish = re.findall(r"[^\W_]+(?:['-][^\W_]+)?", clean, flags=re.UNICODE)
+    words = [word for word in wordish if not any(_is_cjk_like(char) for char in word)]
+    cjk_chars = sum(1 for char in clean if _is_cjk_like(char))
+    estimate = max(len(words) * 18, cjk_chars * 3)
+    if estimate <= 0:
+        return 0
+    cap = max(0, int(max_new_tokens) - int(num_codebooks) - 1)
+    if cap <= 0:
+        return 0
+    return min(cap, max(32, min(int(estimate), int(max_new_tokens * 0.8))))
 
 
 class HiggsFusedMultiTextEmbedding(nn.Module):
@@ -117,10 +145,15 @@ def sampler_step(
     temperature: float,
     top_p: float | None,
     top_k: int | None,
+    suppress_eoc: bool = False,
 ) -> torch.Tensor:
     n = state.num_codebooks
     if state.generation_done:
         return torch.full((n,), STOP_CODE, dtype=torch.long, device=logits_n_v.device)
+
+    if suppress_eoc:
+        logits_n_v = logits_n_v.clone()
+        logits_n_v[0, EOC_ID] = torch.finfo(logits_n_v.dtype).min
 
     codes_n = _sample_independent(
         logits_n_v,
@@ -273,6 +306,7 @@ class HiggsNativeTTS(nn.Module):
         temperature: float,
         top_p: float | None,
         top_k: int | None,
+        min_new_tokens: int = 0,
         progress_callback=None,
     ) -> torch.Tensor:
         device = next(self.parameters()).device
@@ -291,6 +325,7 @@ class HiggsNativeTTS(nn.Module):
                 temperature=float(temperature),
                 top_p=top_p,
                 top_k=top_k,
+                suppress_eoc=i < int(min_new_tokens),
             )
             if int(codes[0].item()) != STOP_CODE:
                 rows.append(codes.detach().to("cpu", torch.long))
@@ -318,6 +353,12 @@ class HiggsNativeTTS(nn.Module):
 
         if len(rows) < self.num_codebooks:
             raise RuntimeError(f"Higgs generated too few audio token rows ({len(rows)}).")
+        if not state.generation_done and len(rows) >= int(max_new_tokens):
+            logger.warning(
+                "Higgs v3 reached max_new_tokens=%d before the model emitted a stop token. "
+                "If text is missing, enable longform chunking or raise max_new_tokens.",
+                int(max_new_tokens),
+            )
         return torch.stack(rows, dim=0)
 
 
@@ -628,6 +669,9 @@ def generate_higgs_audio(
         num_ref_tokens=0 if ref_delayed is None else int(ref_delayed.shape[0]),
         reference_text=reference_text.strip() or None,
     )
+    min_new_tokens = _estimate_min_audio_tokens(text, int(max_new_tokens), bundle.model.num_codebooks)
+    if min_new_tokens > 0:
+        logger.debug("Higgs v3 minimum audio-token guard: %d/%d", min_new_tokens, int(max_new_tokens))
     with torch.inference_mode(), attention_runtime(bundle.attention):
         delayed = bundle.model.generate_codes(
             prompt_ids,
@@ -636,6 +680,7 @@ def generate_higgs_audio(
             temperature=float(temperature),
             top_p=None if top_p <= 0 or top_p >= 1 else float(top_p),
             top_k=None if top_k <= 0 else int(top_k),
+            min_new_tokens=min_new_tokens,
             progress_callback=progress_callback,
         )
         raw = reverse_delay_pattern(delayed)

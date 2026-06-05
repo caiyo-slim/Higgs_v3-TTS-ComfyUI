@@ -1,7 +1,7 @@
 # ComfyUI normally already provides torch, torchaudio, transformers, tokenizers,
 # safetensors, and huggingface_hub. This nodepack intentionally does not pin or
-# upgrade torch/transformers because the native path works against the Qwen3
-# modules available in Transformers 5.3.0.
+# upgrade torch/transformers because the native path is built for Transformers
+# 5.3.0 through 5.5.0, with 5.5.0 recommended.
 accelerate
 numpy
 safetensors

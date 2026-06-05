@@ -133,7 +133,7 @@ def _text_input() -> tuple:
         {
             "multiline": True,
             "default": "Hello! This is Higgs Audio v3 running natively inside ComfyUI.",
-            "tooltip": "Text to synthesize. Inline Higgs tags are allowed, including positional SFX such as <|sfx:laughter|>Haha exactly where the sound should happen.",
+            "tooltip": "Text to synthesize. Inline tags work anywhere, for example <|emotion:relief|>, <|prosody:pause|>, or <|sfx:laughter|>Haha at the exact moment it should happen.",
         },
     )
 
@@ -147,7 +147,7 @@ def _generation_controls() -> dict:
                 "min": 32,
                 "max": 8192,
                 "step": 8,
-                "tooltip": "Maximum audio-code tokens for each generated chunk or speaker turn. Increase if speech cuts off; lower values finish faster.",
+                "tooltip": "Maximum audio-code tokens per single pass. 2048 is roughly 25-30 seconds; raise it or enable chunking if speech cuts off.",
             },
         ),
         "temperature": (
@@ -228,17 +228,17 @@ def _generation_controls() -> dict:
             "BOOLEAN",
             {
                 "default": True,
-                "tooltip": "Split long text at sentence or pause-tag boundaries. Prevents context overflow and avoids cutting through SFX/control tags.",
+                "tooltip": "Split long text at sentence or pause-tag boundaries. Turn this on for narration; off is one direct pass and may stop early on long text.",
             },
         ),
         "words_per_chunk": (
             "INT",
             {
-                "default": 100,
+                "default": 45,
                 "min": 20,
                 "max": 300,
                 "step": 5,
-                "tooltip": "Target chunk size for longform text. Lower is safer; higher preserves longer context.",
+                "tooltip": "Target words per chunk. Around 35-55 fits the 2048-token default better; raise with max_new_tokens for longer chunks.",
             },
         ),
         "pause_between_chunks": (
@@ -406,6 +406,29 @@ def _generate_chunked_audio(
     progress_callback=None,
     use_first_chunk_as_reference: bool = False,
 ) -> dict:
+    if not bool(longform_chunking):
+        prompt_text = control_prefix + text
+        logger.info("Higgs v3 generating single pass: %s", text[:90])
+        audio = generate_higgs_audio(
+            higgs_model,
+            text=prompt_text,
+            reference_audio=reference_audio,
+            reference_audio_path="",
+            reference_text=reference_text,
+            max_new_tokens=int(max_new_tokens),
+            temperature=float(temperature),
+            top_p=float(top_p),
+            top_k=int(top_k),
+            seed=int(seed),
+            trim_reference_audio=True,
+            silence_threshold_db=-42.0,
+            max_reference_seconds=100.0,
+            progress_callback=None,
+        )
+        if progress_callback is not None:
+            progress_callback(1, 1)
+        return audio
+
     chunks = _smart_chunk_text(text, int(words_per_chunk), bool(longform_chunking))
     if not chunks:
         raise ValueError("Text cannot be empty.")
@@ -485,35 +508,35 @@ class HiggsV3LoadModel:
                     get_model_choices(),
                     {
                         "default": "Higgs Audio v3 TTS 4B - bosonai (auto-download)",
-                        "tooltip": "Loads from ComfyUI/models/higgsv3tts. The single model.safetensors file may live in the root folder or a higgs-audio-v3-tts-4b subfolder.",
+                        "tooltip": "Model folder under ComfyUI/models/higgsv3tts. Put model.safetensors in higgs-audio-v3-tts-4b or the root higgsv3tts folder.",
                     },
                 ),
                 "dtype": (
                     DTYPE_OPTIONS,
                     {
                         "default": "auto",
-                        "tooltip": "Weight dtype for Higgs and its audio codec. auto uses bf16 on supported CUDA, fp16 otherwise, and fp32 on CPU.",
+                        "tooltip": "Weight dtype for Higgs and its audio codec. auto uses bf16 on supported CUDA and fp32 otherwise. fp16 is hidden because it can produce non-finite audio.",
                     },
                 ),
                 "device": (
                     DEVICE_OPTIONS,
                     {
                         "default": "auto",
-                        "tooltip": "Device for native inference. auto follows ComfyUI's current torch device.",
+                        "tooltip": "Device for native inference. auto follows ComfyUI's current torch device; cuda is fastest; cpu is fallback only and very slow.",
                     },
                 ),
                 "attention": (
                     ATTENTION_OPTIONS,
                     {
                         "default": "auto",
-                        "tooltip": "Attention backend. auto/sdpa use PyTorch SDPA; flash_attention and sageattention require their packages to be installed.",
+                        "tooltip": "Attention backend. auto/sdpa are usually fastest here; flash_attention needs flash_attn; sageattention may be slower for token-by-token TTS.",
                     },
                 ),
                 "download_if_missing": (
                     "BOOLEAN",
                     {
                         "default": True,
-                        "tooltip": "Downloads missing small assets and, if model.safetensors is absent, the full HF checkpoint into ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b.",
+                        "tooltip": "If files are missing, downloads small assets plus the large model.safetensors into ComfyUI/models/higgsv3tts/higgs-audio-v3-tts-4b.",
                     },
                 ),
             },
@@ -602,7 +625,7 @@ class HiggsV3VoiceClone:
             "reference_audio": (
                 "AUDIO",
                 {
-                    "tooltip": "Reference speaker audio. Clean audio plus reference_text gives the best clone fidelity.",
+                    "tooltip": "Reference voice clip for cloning. Use clean speech with little music/noise; the same clip is reused for every longform chunk.",
                 },
             ),
             "reference_text": (
@@ -610,7 +633,7 @@ class HiggsV3VoiceClone:
                 {
                     "multiline": True,
                     "default": "",
-                    "tooltip": "Transcript of the reference audio. Strongly recommended; connect the Higgs v3 Whisper node when you do not have it.",
+                    "tooltip": "Exact transcript of the reference clip. This strongly improves cloning and is reused for every chunk; Whisper output should be corrected if needed.",
                 },
             ),
         }
@@ -710,7 +733,7 @@ def _io_generation_inputs() -> list:
             min=32,
             max=8192,
             step=8,
-            tooltip="Maximum audio-code tokens for each generated chunk or speaker turn. Increase if speech cuts off.",
+            tooltip="Maximum audio-code tokens per single pass. 2048 is roughly 25-30 seconds; raise it or enable chunking if speech cuts off.",
         ),
         IO.Float.Input(
             "temperature",
@@ -776,15 +799,15 @@ def _io_generation_inputs() -> list:
         IO.Boolean.Input(
             "longform_chunking",
             default=True,
-            tooltip="Split long text at sentence or pause-tag boundaries without cutting through control tags.",
+            tooltip="Split long text at sentence or pause-tag boundaries. Off is one direct pass and may stop early on long text.",
         ),
         IO.Int.Input(
             "words_per_chunk",
-            default=100,
+            default=45,
             min=20,
             max=300,
             step=5,
-            tooltip="Target chunk size for longform text. Lower is safer; higher preserves longer context.",
+            tooltip="Target words per chunk. Around 35-55 fits the 2048-token default better; raise with max_new_tokens for longer chunks.",
         ),
         IO.Float.Input(
             "pause_between_chunks",

@@ -28,7 +28,7 @@ MODEL_FOLDER_NAME = "higgsv3tts"
 OFFICIAL_REPO_ID = "bosonai/higgs-audio-v3-tts-4b"
 OFFICIAL_MODEL_NAME = "Higgs Audio v3 TTS 4B - bosonai (auto-download)"
 HF_ENDPOINT = "https://huggingface.co"
-DTYPE_OPTIONS = ["auto", "bf16", "fp16"]
+DTYPE_OPTIONS = ["auto", "bf16"]
 DEVICE_OPTIONS = ["auto", "cuda", "cpu"]
 ATTENTION_OPTIONS = ["auto", "sdpa", "flash_attention", "sageattention"]
 SMALL_ASSET_PATTERNS = [
@@ -377,14 +377,20 @@ def resolve_dtype(dtype_name: str, device: torch.device) -> torch.dtype:
     if dtype_name == "auto":
         if device.type == "cuda" and torch.cuda.is_available():
             try:
-                return torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16
+                return torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float32
             except Exception:
-                return torch.float16
+                return torch.float32
         return torch.float32
     if dtype_name == "bf16":
+        if device.type == "cuda" and torch.cuda.is_available():
+            try:
+                if not torch.cuda.is_bf16_supported():
+                    raise RuntimeError("bf16 was selected, but this CUDA device does not report bf16 support. Use dtype=auto to fall back to fp32.")
+            except RuntimeError:
+                raise
+            except Exception:
+                pass
         return torch.bfloat16
-    if dtype_name == "fp16":
-        return torch.float16
     raise ValueError(f"Unsupported dtype: {dtype_name}")
 
 
@@ -432,7 +438,26 @@ def _unregister_from_comfy(patcher: Any) -> None:
     try:
         import comfy.model_management as mm
 
-        mm.current_loaded_models[:] = [loaded for loaded in mm.current_loaded_models if loaded.model is not patcher]
+        survivors = []
+        for loaded in mm.current_loaded_models:
+            if loaded.model is patcher:
+                try:
+                    if loaded.model_finalizer is not None:
+                        loaded.model_finalizer.detach()
+                    loaded.model_finalizer = None
+                    loaded.real_model = None
+                except Exception:
+                    pass
+                try:
+                    finalizer = getattr(loaded, "_patcher_finalizer", None)
+                    if finalizer is not None:
+                        finalizer.detach()
+                    loaded._patcher_finalizer = None
+                except Exception:
+                    pass
+                continue
+            survivors.append(loaded)
+        mm.current_loaded_models[:] = survivors
     except Exception:
         pass
 
@@ -496,6 +521,13 @@ def unload_higgs_bundle(bundle: HiggsV3Bundle | None, reason: str = "manual unlo
         except Exception:
             pass
     bundle.patchers.clear()
+    if hard:
+        try:
+            bundle.model = None
+            bundle.codec = None
+            bundle.tokenizer = None
+        except Exception:
+            pass
     gc.collect()
     _empty_accelerator_cache()
     if _ACTIVE_BUNDLE is bundle:
