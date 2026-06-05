@@ -244,17 +244,15 @@ Example:
 
 Sound effects are positional. Put them exactly where the sound should happen, and pair the tag with written sound text.
 
-| Token | Use | Suggested text |
-|-------|-----|----------------|
-| `<|sfx:cough|>` | Cough | `Ahem` |
-| `<|sfx:laughter|>` | Laugh | `Haha`, `Hehe` |
-| `<|sfx:crying|>` | Cry | `Boohoo`, `Sob` |
-| `<|sfx:screaming|>` | Scream | `Ahh`, `Aaah` |
-| `<|sfx:burping|>` | Burp | `Burp` |
-| `<|sfx:humming|>` | Hum | `Hmm`, `Mmm` |
-| `<|sfx:sigh|>` | Sigh | `Ahh`, `Uh` |
-| `<|sfx:sniff|>` | Sniff | `Sff` |
-| `<|sfx:sneeze|>` | Sneeze | `Achoo` |
+- `<|sfx:cough|>` - Cough. Suggested text: `Ahem`.
+- `<|sfx:laughter|>` - Laugh. Suggested text: `Haha`, `Hehe`.
+- `<|sfx:crying|>` - Cry. Suggested text: `Boohoo`, `Sob`.
+- `<|sfx:screaming|>` - Scream. Suggested text: `Ahh`, `Aaah`.
+- `<|sfx:burping|>` - Burp. Suggested text: `Burp`.
+- `<|sfx:humming|>` - Hum. Suggested text: `Hmm`, `Mmm`.
+- `<|sfx:sigh|>` - Sigh. Suggested text: `Ahh`, `Uh`.
+- `<|sfx:sniff|>` - Sniff. Suggested text: `Sff`.
+- `<|sfx:sneeze|>` - Sneeze. Suggested text: `Achoo`.
 
 Example:
 
@@ -264,18 +262,16 @@ That was perfect. <|sfx:laughter|>Haha, absolutely perfect.
 
 ### Prosody
 
-| Token | Effect |
-|-------|--------|
-| `<|prosody:speed_very_slow|>` | About 0.65x speed |
-| `<|prosody:speed_slow|>` | About 0.85x speed |
-| `<|prosody:speed_fast|>` | About 1.2x speed |
-| `<|prosody:speed_very_fast|>` | About 1.4x speed |
-| `<|prosody:pitch_low|>` | Lower pitch |
-| `<|prosody:pitch_high|>` | Higher pitch |
-| `<|prosody:pause|>` | Short pause, about 400-700 ms |
-| `<|prosody:long_pause|>` | Longer pause, about 700-1500 ms |
-| `<|prosody:expressive_high|>` | More expressive delivery |
-| `<|prosody:expressive_low|>` | Flatter delivery |
+- `<|prosody:speed_very_slow|>` - About 0.65x speed.
+- `<|prosody:speed_slow|>` - About 0.85x speed.
+- `<|prosody:speed_fast|>` - About 1.2x speed.
+- `<|prosody:speed_very_fast|>` - About 1.4x speed.
+- `<|prosody:pitch_low|>` - Lower pitch.
+- `<|prosody:pitch_high|>` - Higher pitch.
+- `<|prosody:pause|>` - Short pause, about 400-700 ms.
+- `<|prosody:long_pause|>` - Longer pause, about 700-1500 ms.
+- `<|prosody:expressive_high|>` - More expressive delivery.
+- `<|prosody:expressive_low|>` - Flatter delivery.
 
 ## Longform Chunking
 

@@ -244,17 +244,15 @@ WER/CER 在 5 到 10 之间，共 17 种语言：
 
 音效是位置性的。将标签精确放在声音应该出现的位置，并与书面声音文字配对。
 
-| 标签 | 用途 | 建议文字 |
-|------|------|----------|
-| `<|sfx:cough|>` | 咳嗽 | `咳咳` |
-| `<|sfx:laughter|>` | 笑 | `哈哈`、`嘿嘿` |
-| `<|sfx:crying|>` | 哭 | `呜呜` |
-| `<|sfx:screaming|>` | 尖叫 | `啊啊` |
-| `<|sfx:burping|>` | 打嗝 | `嗝` |
-| `<|sfx:humming|>` | 哼 | `嗯嗯`、`唔` |
-| `<|sfx:sigh|>` | 叹气 | `啊`、`唉` |
-| `<|sfx:sniff|>` | 吸鼻子 | `嘶` |
-| `<|sfx:sneeze|>` | 打喷嚏 | `阿嚏` |
+- `<|sfx:cough|>` - 咳嗽。建议文字：`咳咳`。
+- `<|sfx:laughter|>` - 笑。建议文字：`哈哈`、`嘿嘿`。
+- `<|sfx:crying|>` - 哭。建议文字：`呜呜`。
+- `<|sfx:screaming|>` - 尖叫。建议文字：`啊啊`。
+- `<|sfx:burping|>` - 打嗝。建议文字：`嗝`。
+- `<|sfx:humming|>` - 哼。建议文字：`嗯嗯`、`唔`。
+- `<|sfx:sigh|>` - 叹气。建议文字：`啊`、`唉`。
+- `<|sfx:sniff|>` - 吸鼻子。建议文字：`嘶`。
+- `<|sfx:sneeze|>` - 打喷嚏。建议文字：`阿嚏`。
 
 示例：
 
@@ -264,18 +262,16 @@ WER/CER 在 5 到 10 之间，共 17 种语言：
 
 ### 韵律
 
-| 标签 | 效果 |
-|------|------|
-| `<|prosody:speed_very_slow|>` | 约 0.65 倍速 |
-| `<|prosody:speed_slow|>` | 约 0.85 倍速 |
-| `<|prosody:speed_fast|>` | 约 1.2 倍速 |
-| `<|prosody:speed_very_fast|>` | 约 1.4 倍速 |
-| `<|prosody:pitch_low|>` | 降低音高 |
-| `<|prosody:pitch_high|>` | 提高音高 |
-| `<|prosody:pause|>` | 短暂停顿，约 400-700 毫秒 |
-| `<|prosody:long_pause|>` | 较长停顿，约 700-1500 毫秒 |
-| `<|prosody:expressive_high|>` | 更有表现力的演绎 |
-| `<|prosody:expressive_low|>` | 更平淡的演绎 |
+- `<|prosody:speed_very_slow|>` - 约 0.65 倍速。
+- `<|prosody:speed_slow|>` - 约 0.85 倍速。
+- `<|prosody:speed_fast|>` - 约 1.2 倍速。
+- `<|prosody:speed_very_fast|>` - 约 1.4 倍速。
+- `<|prosody:pitch_low|>` - 降低音高。
+- `<|prosody:pitch_high|>` - 提高音高。
+- `<|prosody:pause|>` - 短暂停顿，约 400-700 毫秒。
+- `<|prosody:long_pause|>` - 较长停顿，约 700-1500 毫秒。
+- `<|prosody:expressive_high|>` - 更有表现力的演绎。
+- `<|prosody:expressive_low|>` - 更平淡的演绎。
 
 ## 长文本分块
 
