@@ -4,7 +4,7 @@
 
 **English** | **[中文](./README_zh.md)**
 
-**Version: v0.1.2**
+**Version: v0.1.3**
 
 ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b): multilingual conversational TTS, zero-shot voice cloning, inline emotion/style/prosody/SFX tags, longform chunking, multi-speaker dialogue, Whisper reference transcription, and ComfyUI/AIMDO memory tracking.
 
@@ -114,11 +114,6 @@ The checkpoint is about **9.31 GB** on disk. Expect roughly **11 GB VRAM** for t
 | `top_p` | FLOAT | `0.95` | Nucleus sampling. `1.0` disables it. |
 | `top_k` | INT | `50` | Top-K codebook sampling. `0` disables it. |
 | `seed` | INT | `0` | `0` uses the current random state; positive values are repeatable. |
-| `emotion` | COMBO | `none` | Optional whole-turn emotion prepended to each chunk. |
-| `style` | COMBO | `none` | Optional whole-turn style. |
-| `speed` | COMBO | `none` | Optional whole-turn speed prosody. |
-| `pitch` | COMBO | `none` | Optional whole-turn pitch prosody. |
-| `expressiveness` | COMBO | `none` | Optional whole-turn expressiveness prosody. |
 | `longform_chunking` | BOOLEAN | `True` | Split long text safely at sentence/pause boundaries. When off, the node makes one direct generation call. |
 | `words_per_chunk` | INT | `45` | Target chunk size. Around 35-55 fits the 2048-token default better; CJK-like scripts use character-style splitting. |
 | `pause_between_chunks` | FLOAT | `0.15` | Silence inserted between generated chunks. |
@@ -207,7 +202,7 @@ Albanian, Chichewa/Nyanja, Eastern Punjabi, Ganda, Icelandic, Irish, Kabyle, Kab
 
 ## Inline Control Tags
 
-Dropdown controls are optional convenience controls. If `emotion`, `style`, `speed`, `pitch`, and `expressiveness` are all set to `none`, inline tags typed directly into `text` still work.
+Inline tags typed directly into `text` are the control path for emotion, style, speed, pitch, expressiveness, pauses, and sound effects. The nodes do not add separate delivery dropdowns.
 
 Use inline tags when you want changes at specific moments:
 
@@ -218,7 +213,7 @@ Use inline tags when you want changes at specific moments:
 <|sfx:sigh|>Ahh, let's start over.
 ```
 
-Longform chunking preserves tags and avoids cutting inside `<|...|>`. For delivery tags such as emotion/style/speed/pitch/expressiveness, the chunker carries the latest active tag state into later chunks when dropdown controls are set to `none`.
+Longform chunking preserves tags and avoids cutting inside `<|...|>`. For delivery tags such as emotion/style/speed/pitch/expressiveness, the chunker carries the latest active tag state into later chunks.
 
 ### Emotion
 
@@ -284,7 +279,7 @@ The chunker:
 - splits at sentence endings and `<|prosody:pause|>` / `<|prosody:long_pause|>`;
 - avoids cutting through `<|...|>` control tags;
 - avoids ending a chunk with a bare SFX/control tag;
-- carries active delivery tags into later chunks when dropdowns are `none`;
+- carries active delivery tags into later chunks;
 - inserts `pause_between_chunks` seconds of silence between chunks.
 
 Voice consistency:
@@ -357,4 +352,4 @@ Make sure the SFX tag is immediately followed by written sound text:
 
 ### Inline controls are ignored after chunking
 
-Use `longform_chunking=True` in v0.1.1 or newer. This version carries active delivery tags through chunks when dropdown controls are set to `none`.
+Use `longform_chunking=True` in v0.1.1 or newer. This version carries active delivery tags through chunks.

@@ -193,10 +193,19 @@ try:
 
         def detach(self, unpatch_all=True):
             try:
-                self.model.to(self.offload_device)
+                if bool(getattr(self, "_higgs_hard_detach", False)) and hasattr(self.model, "to_empty"):
+                    self.model.to_empty(device=torch.device("meta"))
+                else:
+                    self.model.to(self.offload_device)
                 self.model.model_loaded_weight_memory = 0
+                if hasattr(self.model, "dynamic_vbars"):
+                    self.model.dynamic_vbars.clear()
+                if hasattr(self.model, "dynamic_pins"):
+                    self.model.dynamic_pins.clear()
             except Exception:
                 pass
+            finally:
+                self._higgs_hard_detach = False
             _empty_accelerator_cache()
             return self.model
 
@@ -479,11 +488,12 @@ def resume_runtime_module(patcher: Any, device: torch.device) -> None:
     _register_with_comfy(patcher)
 
 
-def unload_runtime_module(patcher: Any) -> None:
+def unload_runtime_module(patcher: Any, *, hard: bool = True) -> None:
     if patcher is None:
         return
     _unregister_from_comfy(patcher)
     try:
+        patcher._higgs_hard_detach = bool(hard)
         patcher.detach()
     except Exception:
         pass
@@ -500,15 +510,16 @@ def unload_higgs_bundle(bundle: HiggsV3Bundle | None, reason: str = "manual unlo
         return
     logger.info("Unloading Higgs v3 bundle (%s).", reason)
     for patcher in list(bundle.patchers):
-        unload_runtime_module(patcher)
-    try:
-        bundle.model.to("cpu")
-    except Exception:
-        pass
-    try:
-        bundle.codec.model.to("cpu")
-    except Exception:
-        pass
+        unload_runtime_module(patcher, hard=hard)
+    if not hard:
+        try:
+            bundle.model.to("cpu")
+        except Exception:
+            pass
+        try:
+            bundle.codec.model.to("cpu")
+        except Exception:
+            pass
     for module in (bundle.model, bundle.codec.model):
         try:
             module.model_loaded_weight_memory = 0

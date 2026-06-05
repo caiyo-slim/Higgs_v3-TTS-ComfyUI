@@ -27,34 +27,6 @@ except Exception:
     _HAS_DYNAMIC_COMBO = False
 
 
-EMOTION_OPTIONS = [
-    "none",
-    "elation",
-    "amusement",
-    "enthusiasm",
-    "determination",
-    "pride",
-    "contentment",
-    "affection",
-    "relief",
-    "contemplation",
-    "confusion",
-    "surprise",
-    "awe",
-    "longing",
-    "arousal",
-    "anger",
-    "fear",
-    "disgust",
-    "bitterness",
-    "sadness",
-    "shame",
-    "helplessness",
-]
-STYLE_OPTIONS = ["none", "singing", "shouting", "whispering"]
-SPEED_OPTIONS = ["none", "speed_very_slow", "speed_slow", "speed_fast", "speed_very_fast"]
-PITCH_OPTIONS = ["none", "pitch_low", "pitch_high"]
-EXPRESSIVE_OPTIONS = ["none", "expressive_high", "expressive_low"]
 MAX_SPEAKERS = 6
 DELIVERY_PROSODY_VALUES = {
     "speed_very_slow",
@@ -66,18 +38,6 @@ DELIVERY_PROSODY_VALUES = {
     "expressive_high",
     "expressive_low",
 }
-
-
-def _control_prefix(emotion: str, style: str, speed: str, pitch: str, expressiveness: str) -> str:
-    parts: list[str] = []
-    if emotion != "none":
-        parts.append(f"<|emotion:{emotion}|>")
-    if style != "none":
-        parts.append(f"<|style:{style}|>")
-    for value in (speed, pitch, expressiveness):
-        if value != "none":
-            parts.append(f"<|prosody:{value}|>")
-    return "".join(parts)
 
 
 def _delivery_state_from_prefix(prefix: str) -> dict[str, str]:
@@ -187,41 +147,6 @@ def _generation_controls() -> dict:
                 "min": 0,
                 "max": 2**31 - 1,
                 "tooltip": "0 uses the current random state. Set a positive number for repeatable phrasing.",
-            },
-        ),
-        "emotion": (
-            EMOTION_OPTIONS,
-            {
-                "default": "none",
-                "tooltip": "Optional whole-turn emotion tag prepended before the text. Use inline tags in text for mid-line changes.",
-            },
-        ),
-        "style": (
-            STYLE_OPTIONS,
-            {
-                "default": "none",
-                "tooltip": "Optional whole-turn speaking style. Singing, shouting, and whispering work best on short focused lines.",
-            },
-        ),
-        "speed": (
-            SPEED_OPTIONS,
-            {
-                "default": "none",
-                "tooltip": "Optional whole-turn speed control. For exact pauses, put <|prosody:pause|> or <|prosody:long_pause|> directly in text.",
-            },
-        ),
-        "pitch": (
-            PITCH_OPTIONS,
-            {
-                "default": "none",
-                "tooltip": "Optional whole-turn pitch shift. Keep at none unless you want a clear low/high delivery.",
-            },
-        ),
-        "expressiveness": (
-            EXPRESSIVE_OPTIONS,
-            {
-                "default": "none",
-                "tooltip": "Optional whole-turn expressiveness. High adds liveliness; low flattens delivery.",
             },
         ),
         "longform_chunking": (
@@ -581,11 +506,6 @@ class HiggsV3Generate:
         top_p: float,
         top_k: int,
         seed: int,
-        emotion: str,
-        style: str,
-        speed: str,
-        pitch: str,
-        expressiveness: str,
         longform_chunking: bool,
         words_per_chunk: int,
         pause_between_chunks: float,
@@ -599,7 +519,7 @@ class HiggsV3Generate:
         audio = _generate_chunked_audio(
             higgs_model,
             text=text,
-            control_prefix=_control_prefix(emotion, style, speed, pitch, expressiveness),
+            control_prefix="",
             reference_audio=None,
             reference_text="",
             max_new_tokens=int(max_new_tokens),
@@ -657,11 +577,6 @@ class HiggsV3VoiceClone:
         top_p: float,
         top_k: int,
         seed: int,
-        emotion: str,
-        style: str,
-        speed: str,
-        pitch: str,
-        expressiveness: str,
         longform_chunking: bool,
         words_per_chunk: int,
         pause_between_chunks: float,
@@ -675,7 +590,7 @@ class HiggsV3VoiceClone:
         audio = _generate_chunked_audio(
             higgs_model,
             text=text,
-            control_prefix=_control_prefix(emotion, style, speed, pitch, expressiveness),
+            control_prefix="",
             reference_audio=reference_audio,
             reference_text=reference_text,
             max_new_tokens=int(max_new_tokens),
@@ -766,36 +681,6 @@ def _io_generation_inputs() -> list:
             max=2**31 - 1,
             tooltip="0 uses the current random state. Set a positive value for repeatable phrasing.",
         ),
-        IO.Combo.Input(
-            "emotion",
-            options=EMOTION_OPTIONS,
-            default="none",
-            tooltip="Optional whole-turn emotion tag. Inline tags in text can still change emotion mid-line.",
-        ),
-        IO.Combo.Input(
-            "style",
-            options=STYLE_OPTIONS,
-            default="none",
-            tooltip="Optional whole-turn style. Singing, shouting, and whispering work best on short focused lines.",
-        ),
-        IO.Combo.Input(
-            "speed",
-            options=SPEED_OPTIONS,
-            default="none",
-            tooltip="Optional whole-turn speed. Use inline pause tags for precise timing.",
-        ),
-        IO.Combo.Input(
-            "pitch",
-            options=PITCH_OPTIONS,
-            default="none",
-            tooltip="Optional whole-turn pitch shift. Keep none unless you want a clear low/high delivery.",
-        ),
-        IO.Combo.Input(
-            "expressiveness",
-            options=EXPRESSIVE_OPTIONS,
-            default="none",
-            tooltip="Optional whole-turn expressiveness. High adds liveliness; low flattens delivery.",
-        ),
         IO.Boolean.Input(
             "longform_chunking",
             default=True,
@@ -833,11 +718,6 @@ def _generate_multi_speaker_audio(
     top_p: float,
     top_k: int,
     seed: int,
-    emotion: str,
-    style: str,
-    speed: str,
-    pitch: str,
-    expressiveness: str,
     longform_chunking: bool,
     words_per_chunk: int,
     pause_between_chunks: float,
@@ -854,7 +734,6 @@ def _generate_multi_speaker_audio(
             raise ValueError(f"Missing reference audio for Speaker_{speaker_idx + 1}.")
 
     pbar = ProgressBar(len(turns)) if ProgressBar is not None else None
-    prefix = _control_prefix(emotion, style, speed, pitch, expressiveness)
     segments: list[dict] = []
     logger.info("Higgs v3 multi-speaker generation: %d turns, %d speakers.", len(turns), num_speakers)
     for index, (speaker_idx, line_text) in enumerate(turns):
@@ -870,7 +749,7 @@ def _generate_multi_speaker_audio(
             _generate_chunked_audio(
                 higgs_model,
                 text=line_text,
-                control_prefix=prefix,
+                control_prefix="",
                 reference_audio=speaker_audio[speaker_idx],
                 reference_text=speaker_ref_text.get(speaker_idx, ""),
                 max_new_tokens=int(max_new_tokens),
@@ -949,11 +828,6 @@ if _HAS_DYNAMIC_COMBO:
             top_p: float,
             top_k: int,
             seed: int,
-            emotion: str,
-            style: str,
-            speed: str,
-            pitch: str,
-            expressiveness: str,
             longform_chunking: bool,
             words_per_chunk: int,
             pause_between_chunks: float,
@@ -979,11 +853,6 @@ if _HAS_DYNAMIC_COMBO:
                 top_p=float(top_p),
                 top_k=int(top_k),
                 seed=int(seed),
-                emotion=emotion,
-                style=style,
-                speed=speed,
-                pitch=pitch,
-                expressiveness=expressiveness,
                 longform_chunking=bool(longform_chunking),
                 words_per_chunk=int(words_per_chunk),
                 pause_between_chunks=float(pause_between_chunks),
@@ -1093,11 +962,6 @@ else:
             top_p: float,
             top_k: int,
             seed: int,
-            emotion: str,
-            style: str,
-            speed: str,
-            pitch: str,
-            expressiveness: str,
             longform_chunking: bool,
             words_per_chunk: int,
             pause_between_chunks: float,
@@ -1128,11 +992,6 @@ else:
                 top_p=float(top_p),
                 top_k=int(top_k),
                 seed=int(seed),
-                emotion=emotion,
-                style=style,
-                speed=speed,
-                pitch=pitch,
-                expressiveness=expressiveness,
                 longform_chunking=bool(longform_chunking),
                 words_per_chunk=int(words_per_chunk),
                 pause_between_chunks=float(pause_between_chunks),

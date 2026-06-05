@@ -1,8 +1,8 @@
 {
   "id": "6e8b24c7-f127-4de4-a29f-172f21552fad",
   "revision": 0,
-  "last_node_id": 34,
-  "last_link_id": 43,
+  "last_node_id": 37,
+  "last_link_id": 55,
   "nodes": [
     {
       "id": 22,
@@ -32,12 +32,15 @@
           "name": "transcript",
           "type": "STRING",
           "links": [
-            20
+            54
           ]
         }
       ],
       "properties": {
-        "Node name for S&R": "HiggsV3WhisperTranscribe"
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "dfe191bef0a622bd52b67f5fe53a50aedac412bc",
+        "Node name for S&R": "HiggsV3WhisperTranscribe",
+        "aux_id": "Saganaki22/Higgs_v3-TTS-ComfyUI"
       },
       "widgets_values": [
         "whisper-large-v3-turbo (auto-download)",
@@ -46,153 +49,6 @@
         "transcribe",
         30,
         true
-      ]
-    },
-    {
-      "id": 6,
-      "type": "HiggsV3VoiceClone",
-      "pos": [
-        3116.2322264695363,
-        1505.0692008974092
-      ],
-      "size": [
-        410.0007592652023,
-        573.8943766609045
-      ],
-      "flags": {},
-      "order": 11,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "higgs_model",
-          "type": "HIGGSV3TTS_MODEL",
-          "link": 36
-        },
-        {
-          "name": "reference_audio",
-          "type": "AUDIO",
-          "link": 10
-        },
-        {
-          "name": "reference_text",
-          "type": "STRING",
-          "widget": {
-            "name": "reference_text"
-          },
-          "link": 6
-        }
-      ],
-      "outputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "links": [
-            9
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "HiggsV3VoiceClone"
-      },
-      "widgets_values": [
-        "Good morning everyone,\n\nToday, I’d like to talk about Artificial Intelligence, commonly known as AI. AI is a technology that allows computers and machines to perform tasks that usually require human intelligence, such as learning, reasoning, recognizing patterns, and making decisions.\n\n",
-        "",
-        2048,
-        1,
-        0.95,
-        50,
-        1017763018,
-        "randomize",
-        "none",
-        "none",
-        "none",
-        "none",
-        "none",
-        true,
-        100,
-        0.15
-      ]
-    },
-    {
-      "id": 5,
-      "type": "HiggsV3WhisperTranscribe",
-      "pos": [
-        2770.070746437793,
-        1705.0751951614127
-      ],
-      "size": [
-        292.0103515625,
-        178
-      ],
-      "flags": {},
-      "order": 8,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "link": 8
-        }
-      ],
-      "outputs": [
-        {
-          "name": "transcript",
-          "type": "STRING",
-          "links": [
-            6,
-            7
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "HiggsV3WhisperTranscribe"
-      },
-      "widgets_values": [
-        "whisper-large-v3-turbo (auto-download)",
-        "auto",
-        "auto",
-        "transcribe",
-        30,
-        true
-      ]
-    },
-    {
-      "id": 7,
-      "type": "PreviewAny",
-      "pos": [
-        2775.281838132891,
-        1944.7760845402915
-      ],
-      "size": [
-        283.99315655718283,
-        116.15197874042428
-      ],
-      "flags": {},
-      "order": 12,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "source",
-          "type": "*",
-          "link": 7
-        }
-      ],
-      "outputs": [
-        {
-          "name": "STRING",
-          "type": "STRING",
-          "links": null
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.24.0",
-        "Node name for S&R": "PreviewAny"
-      },
-      "widgets_values": [
-        null,
-        null,
-        null
       ]
     },
     {
@@ -213,7 +69,7 @@
         {
           "name": "audio",
           "type": "AUDIO",
-          "link": 9
+          "link": 47
         }
       ],
       "outputs": [],
@@ -225,57 +81,6 @@
       "widgets_values": [
         "audio/ComfyUI",
         "V0"
-      ]
-    },
-    {
-      "id": 4,
-      "type": "HiggsV3Generate",
-      "pos": [
-        3563.1741992966217,
-        1505.8895615926774
-      ],
-      "size": [
-        381.80123383737964,
-        548.9423332563481
-      ],
-      "flags": {},
-      "order": 7,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "higgs_model",
-          "type": "HIGGSV3TTS_MODEL",
-          "link": 43
-        }
-      ],
-      "outputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "links": [
-            4
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "HiggsV3Generate"
-      },
-      "widgets_values": [
-        "Hello! This is Higgs Audio v3 running natively inside ComfyUI.",
-        2048,
-        1,
-        0.95,
-        50,
-        1105746527,
-        "randomize",
-        "none",
-        "none",
-        "none",
-        "none",
-        "none",
-        true,
-        100,
-        0.15
       ]
     },
     {
@@ -296,7 +101,7 @@
         {
           "name": "audio",
           "type": "AUDIO",
-          "link": 4
+          "link": 49
         }
       ],
       "outputs": [],
@@ -333,7 +138,7 @@
           "type": "AUDIO",
           "links": [
             19,
-            21
+            53
           ]
         }
       ],
@@ -371,7 +176,7 @@
           "type": "AUDIO",
           "links": [
             12,
-            18
+            51
           ]
         }
       ],
@@ -384,93 +189,6 @@
         "sample-6.mp3",
         null,
         null
-      ]
-    },
-    {
-      "id": 11,
-      "type": "HiggsV3MultiSpeaker",
-      "pos": [
-        3032.2623362937484,
-        2371.5294595930304
-      ],
-      "size": [
-        558.3840203326131,
-        620
-      ],
-      "flags": {},
-      "order": 9,
-      "mode": 4,
-      "inputs": [
-        {
-          "name": "higgs_model",
-          "type": "HIGGSV3TTS_MODEL",
-          "link": 42
-        },
-        {
-          "label": "speaker_1_audio",
-          "name": "num_speakers.speaker_1_audio",
-          "shape": 7,
-          "type": "AUDIO",
-          "link": 18
-        },
-        {
-          "name": "num_speakers.speaker_1_reference_text",
-          "shape": 7,
-          "type": "STRING",
-          "widget": {
-            "name": "num_speakers.speaker_1_reference_text"
-          },
-          "link": 17
-        },
-        {
-          "label": "speaker_2_audio",
-          "name": "num_speakers.speaker_2_audio",
-          "shape": 7,
-          "type": "AUDIO",
-          "link": 21
-        },
-        {
-          "name": "num_speakers.speaker_2_reference_text",
-          "shape": 7,
-          "type": "STRING",
-          "widget": {
-            "name": "num_speakers.speaker_2_reference_text"
-          },
-          "link": 20
-        }
-      ],
-      "outputs": [
-        {
-          "name": "audio",
-          "type": "AUDIO",
-          "links": [
-            31
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "HiggsV3MultiSpeaker"
-      },
-      "widgets_values": [
-        "[Speaker_1]: <|emotion:contemplation|>Gentlemen, if a tattoo is a memory on skin, does that mean my arm is basically a library?\n[Speaker_2]: <|emotion:amusement|>Your arm is a decentralized storage solution, bro. Bitcoin fixes this.\n",
-        "2",
-        "",
-        "",
-        0.3,
-        2048,
-        1,
-        0.95,
-        50,
-        469864217,
-        "randomize",
-        "none",
-        "none",
-        "none",
-        "none",
-        "none",
-        false,
-        100,
-        0.15
       ]
     },
     {
@@ -491,7 +209,7 @@
         {
           "name": "audio",
           "type": "AUDIO",
-          "link": 31
+          "link": 55
         }
       ],
       "outputs": [],
@@ -506,43 +224,6 @@
       ]
     },
     {
-      "id": 1,
-      "type": "HiggsV3LoadModel",
-      "pos": [
-        2756.9073156157174,
-        1251.6320845319242
-      ],
-      "size": [
-        284.7335674558167,
-        154
-      ],
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "higgs_model",
-          "type": "HIGGSV3TTS_MODEL",
-          "links": [
-            36,
-            42,
-            43
-          ]
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "HiggsV3LoadModel"
-      },
-      "widgets_values": [
-        "Higgs Audio v3 TTS 4B - bosonai (auto-download)",
-        "auto",
-        "auto",
-        "flash_attention",
-        true
-      ]
-    },
-    {
       "id": 34,
       "type": "MarkdownNote",
       "pos": [
@@ -554,7 +235,7 @@
         638.8659915696926
       ],
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "inputs": [],
       "outputs": [],
@@ -565,42 +246,6 @@
       ],
       "color": "#222",
       "bgcolor": "#000"
-    },
-    {
-      "id": 8,
-      "type": "LoadAudio",
-      "pos": [
-        2771.041252925347,
-        1517.20888343487
-      ],
-      "size": [
-        287.63746717403865,
-        136
-      ],
-      "flags": {},
-      "order": 4,
-      "mode": 0,
-      "inputs": [],
-      "outputs": [
-        {
-          "name": "AUDIO",
-          "type": "AUDIO",
-          "links": [
-            8,
-            10
-          ]
-        }
-      ],
-      "properties": {
-        "cnr_id": "comfy-core",
-        "ver": "0.24.0",
-        "Node name for S&R": "LoadAudio"
-      },
-      "widgets_values": [
-        "sample-6.mp3",
-        null,
-        null
-      ]
     },
     {
       "id": 13,
@@ -630,12 +275,15 @@
           "name": "transcript",
           "type": "STRING",
           "links": [
-            17
+            52
           ]
         }
       ],
       "properties": {
-        "Node name for S&R": "HiggsV3WhisperTranscribe"
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "dfe191bef0a622bd52b67f5fe53a50aedac412bc",
+        "Node name for S&R": "HiggsV3WhisperTranscribe",
+        "aux_id": "Saganaki22/Higgs_v3-TTS-ComfyUI"
       },
       "widgets_values": [
         "whisper-large-v3-turbo (auto-download)",
@@ -645,26 +293,365 @@
         30,
         true
       ]
+    },
+    {
+      "id": 1,
+      "type": "HiggsV3LoadModel",
+      "pos": [
+        2756.9073156157174,
+        1251.6320845319242
+      ],
+      "size": [
+        284.7335674558167,
+        154
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "higgs_model",
+          "type": "HIGGSV3TTS_MODEL",
+          "links": [
+            44,
+            48,
+            50
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "dfe191bef0a622bd52b67f5fe53a50aedac412bc",
+        "Node name for S&R": "HiggsV3LoadModel",
+        "aux_id": "Saganaki22/Higgs_v3-TTS-ComfyUI"
+      },
+      "widgets_values": [
+        "Higgs Audio v3 TTS 4B - bosonai (auto-download)",
+        "auto",
+        "auto",
+        "auto",
+        true
+      ]
+    },
+    {
+      "id": 37,
+      "type": "HiggsV3MultiSpeaker",
+      "pos": [
+        3076.162582289397,
+        2373.6536650444323
+      ],
+      "size": [
+        400,
+        500
+      ],
+      "flags": {},
+      "order": 9,
+      "mode": 4,
+      "inputs": [
+        {
+          "name": "higgs_model",
+          "type": "HIGGSV3TTS_MODEL",
+          "link": 50
+        },
+        {
+          "label": "speaker_1_audio",
+          "name": "num_speakers.speaker_1_audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 51
+        },
+        {
+          "name": "num_speakers.speaker_1_reference_text",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "num_speakers.speaker_1_reference_text"
+          },
+          "link": 52
+        },
+        {
+          "label": "speaker_2_audio",
+          "name": "num_speakers.speaker_2_audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 53
+        },
+        {
+          "name": "num_speakers.speaker_2_reference_text",
+          "shape": 7,
+          "type": "STRING",
+          "widget": {
+            "name": "num_speakers.speaker_2_reference_text"
+          },
+          "link": 54
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            55
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "e483a63ef5497331c31883d8b73a5fda97087aed",
+        "Node name for S&R": "HiggsV3MultiSpeaker"
+      },
+      "widgets_values": [
+        "[Speaker_1]: Hello, I am speaker one.\n[Speaker_2]: And I am speaker two. <|sfx:laughter|>Haha, nice to meet you.",
+        "2",
+        "",
+        "",
+        0.3,
+        2048,
+        1,
+        0.95,
+        50,
+        0,
+        "randomize",
+        false,
+        45,
+        0.15
+      ]
+    },
+    {
+      "id": 8,
+      "type": "LoadAudio",
+      "pos": [
+        2771.041252925347,
+        1507.7844919154822
+      ],
+      "size": [
+        287.63746717403865,
+        136
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            8,
+            45
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.24.0",
+        "Node name for S&R": "LoadAudio"
+      },
+      "widgets_values": [
+        "sample-6.mp3",
+        null,
+        null
+      ]
+    },
+    {
+      "id": 5,
+      "type": "HiggsV3WhisperTranscribe",
+      "pos": [
+        2771.0131855897316,
+        1707.902512617229
+      ],
+      "size": [
+        292.0103515625,
+        178
+      ],
+      "flags": {},
+      "order": 8,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 8
+        }
+      ],
+      "outputs": [
+        {
+          "name": "transcript",
+          "type": "STRING",
+          "links": [
+            7,
+            46
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "dfe191bef0a622bd52b67f5fe53a50aedac412bc",
+        "Node name for S&R": "HiggsV3WhisperTranscribe",
+        "aux_id": "Saganaki22/Higgs_v3-TTS-ComfyUI"
+      },
+      "widgets_values": [
+        "whisper-large-v3-turbo (auto-download)",
+        "auto",
+        "auto",
+        "transcribe",
+        30,
+        true
+      ]
+    },
+    {
+      "id": 7,
+      "type": "PreviewAny",
+      "pos": [
+        2772.454520677075,
+        1949.4882802999853
+      ],
+      "size": [
+        283.99315655718283,
+        116.15197874042428
+      ],
+      "flags": {},
+      "order": 11,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "source",
+          "type": "*",
+          "link": 7
+        }
+      ],
+      "outputs": [
+        {
+          "name": "STRING",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.24.0",
+        "Node name for S&R": "PreviewAny"
+      },
+      "widgets_values": [
+        null,
+        null,
+        null
+      ]
+    },
+    {
+      "id": 35,
+      "type": "HiggsV3VoiceClone",
+      "pos": [
+        3116.2322264695363,
+        1505.0692008974092
+      ],
+      "size": [
+        380.96272913083476,
+        560.7389515609434
+      ],
+      "flags": {},
+      "order": 12,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "higgs_model",
+          "type": "HIGGSV3TTS_MODEL",
+          "link": 44
+        },
+        {
+          "name": "reference_audio",
+          "type": "AUDIO",
+          "link": 45
+        },
+        {
+          "name": "reference_text",
+          "type": "STRING",
+          "widget": {
+            "name": "reference_text"
+          },
+          "link": 46
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            47
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "e483a63ef5497331c31883d8b73a5fda97087aed",
+        "Node name for S&R": "HiggsV3VoiceClone"
+      },
+      "widgets_values": [
+        "Good morning everyone,\n\nToday, I’d like to talk about Artificial Intelligence, commonly known as AI. AI is a technology that allows computers and machines to perform tasks that usually require human intelligence, such as learning, reasoning, recognizing patterns, and making decisions.\n\n",
+        "",
+        2048,
+        1,
+        0.95,
+        50,
+        0,
+        "randomize",
+        true,
+        45,
+        0.15
+      ]
+    },
+    {
+      "id": 36,
+      "type": "HiggsV3Generate",
+      "pos": [
+        3565.059077600499,
+        1509.6593182004324
+      ],
+      "size": [
+        378.41814342060025,
+        542.1053668590478
+      ],
+      "flags": {},
+      "order": 7,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "higgs_model",
+          "type": "HIGGSV3TTS_MODEL",
+          "link": 48
+        }
+      ],
+      "outputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "links": [
+            49
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "Higgs_v3-TTS-ComfyUI",
+        "ver": "e483a63ef5497331c31883d8b73a5fda97087aed",
+        "Node name for S&R": "HiggsV3Generate"
+      },
+      "widgets_values": [
+        "Good morning everyone,\n\nToday, I’d like to talk about Artificial Intelligence, commonly known as AI. AI is a technology that allows computers and machines to perform tasks that usually require human intelligence, such as learning, reasoning, recognizing patterns, and making decisions.\n\n",
+        2048,
+        1,
+        0.95,
+        50,
+        0,
+        "randomize",
+        true,
+        45,
+        0.15
+      ]
     }
   ],
   "links": [
     [
-      4,
-      4,
-      0,
-      3,
-      0,
-      "AUDIO"
-    ],
-    [
-      6,
-      5,
-      0,
-      6,
-      2,
-      "STRING"
-    ],
-    [
       7,
       5,
       0,
@@ -681,43 +668,11 @@
       "AUDIO"
     ],
     [
-      9,
-      6,
-      0,
-      9,
-      0,
-      "AUDIO"
-    ],
-    [
-      10,
-      8,
-      0,
-      6,
-      1,
-      "AUDIO"
-    ],
-    [
       12,
       12,
       0,
       13,
       0,
-      "AUDIO"
-    ],
-    [
-      17,
-      13,
-      0,
-      11,
-      2,
-      "STRING"
-    ],
-    [
-      18,
-      12,
-      0,
-      11,
-      1,
       "AUDIO"
     ],
     [
@@ -729,52 +684,100 @@
       "AUDIO"
     ],
     [
-      20,
-      22,
+      44,
+      1,
       0,
-      11,
-      4,
+      35,
+      0,
+      "HIGGSV3TTS_MODEL"
+    ],
+    [
+      45,
+      8,
+      0,
+      35,
+      1,
+      "AUDIO"
+    ],
+    [
+      46,
+      5,
+      0,
+      35,
+      2,
       "STRING"
     ],
     [
-      21,
+      47,
+      35,
+      0,
+      9,
+      0,
+      "AUDIO"
+    ],
+    [
+      48,
+      1,
+      0,
+      36,
+      0,
+      "HIGGSV3TTS_MODEL"
+    ],
+    [
+      49,
+      36,
+      0,
+      3,
+      0,
+      "AUDIO"
+    ],
+    [
+      50,
+      1,
+      0,
+      37,
+      0,
+      "HIGGSV3TTS_MODEL"
+    ],
+    [
+      51,
+      12,
+      0,
+      37,
+      1,
+      "AUDIO"
+    ],
+    [
+      52,
+      13,
+      0,
+      37,
+      2,
+      "STRING"
+    ],
+    [
+      53,
       23,
       0,
-      11,
+      37,
       3,
       "AUDIO"
     ],
     [
-      31,
-      11,
+      54,
+      22,
+      0,
+      37,
+      4,
+      "STRING"
+    ],
+    [
+      55,
+      37,
       0,
       30,
       0,
       "AUDIO"
-    ],
-    [
-      36,
-      1,
-      0,
-      6,
-      0,
-      "HIGGSV3TTS_MODEL"
-    ],
-    [
-      42,
-      1,
-      0,
-      11,
-      0,
-      "HIGGSV3TTS_MODEL"
-    ],
-    [
-      43,
-      1,
-      0,
-      4,
-      0,
-      "HIGGSV3TTS_MODEL"
     ]
   ],
   "groups": [
@@ -784,8 +787,8 @@
       "bounding": [
         2746.002848673048,
         2297.62629076014,
-        1216.8197583216734,
-        713.1745585672097
+        1218.3375660002625,
+        608.4458287445655
       ],
       "color": "#3f789e",
       "flags": {}
@@ -830,10 +833,10 @@
   "config": {},
   "extra": {
     "ds": {
-      "scale": 0.5784775952268403,
+      "scale": 0.8769226950000013,
       "offset": [
-        -1172.6313969276498,
-        -947.7557309503788
+        -1908.1720284493788,
+        -962.9252538077466
       ]
     },
     "frontendVersion": "1.45.15",
