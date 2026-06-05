@@ -1,0 +1,27 @@
+[project]
+name = "Higgs_v3-TTS-ComfyUI"
+description = "ComfyUI custom nodes for Higgs Audio v3 TTS with native inference, voice cloning, multi-speaker dialogue, longform chunking, and AIMDO memory tracking"
+version = "0.1.1"
+license = {file = "LICENSE"}
+dependencies = [
+    "accelerate",
+    "numpy",
+    "safetensors",
+    "tokenizers",
+    "huggingface-hub",
+]
+
+[project.urls]
+Repository = "https://github.com/Saganaki22/Higgs_v3-TTS-ComfyUI"
+Model = "https://huggingface.co/bosonai/higgs-audio-v3-tts-4b"
+
+[tool.comfy]
+PublisherId = "saganaki22"
+DisplayName = "Higgs v3 TTS"
+Icon = "https://avatars.githubusercontent.com/u/84208527"
+PreInstall = "install.py"
+
+[tool.higgs-v3-tts]
+transformers = ">=5.3.0,<=5.5.0"
+recommended-transformers = "5.5.0"
+model-vram = "about 11 GB with bf16 on CUDA"
