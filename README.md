@@ -1,7 +1,5 @@
 # Higgs_v3-TTS-ComfyUI
 
-**Version: v0.1.0**
-
 Native ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b): multilingual conversational TTS, zero-shot voice cloning, inline emotion/style/prosody/SFX tags, longform chunking, multi-speaker dialogue, Whisper reference transcription, and ComfyUI/AIMDO memory tracking.
 
 [![Version](https://img.shields.io/badge/version-v0.1.0-blue)](#)
