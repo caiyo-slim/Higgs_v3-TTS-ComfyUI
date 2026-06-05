@@ -1,3 +1,5 @@
+<img width="1006" height="78" alt="logo" src="https://github.com/user-attachments/assets/02fde121-2666-4119-83dd-0931e40610b8" />
+
 # Higgs_v3-TTS-ComfyUI
 
 Native ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b): multilingual conversational TTS, zero-shot voice cloning, inline emotion/style/prosody/SFX tags, longform chunking, multi-speaker dialogue, Whisper reference transcription, and ComfyUI/AIMDO memory tracking.
@@ -6,6 +8,9 @@ Native ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/
 [![Hugging Face](https://img.shields.io/badge/HuggingFace-bosonai%2Fhiggs--audio--v3--tts--4b-blue)](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b)
 
 > License note: Higgs Audio v3 TTS is released by Boson AI for research and non-commercial use. Do not use voice cloning without consent.
+
+<img width="1077" height="1115" alt="Screenshot 2026-06-05 041705" src="https://github.com/user-attachments/assets/64d17c30-80c5-42b1-8d5a-2d98ebbc45ee" />
+
 
 ## Features
 
@@ -25,7 +30,7 @@ Native ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone <this repo> Higgs_v3-TTS-ComfyUI
+git clone https://github.com/Saganaki22/Higgs_v3-TTS-ComfyUI.git
 cd Higgs_v3-TTS-ComfyUI
 python install.py
 ```
@@ -33,7 +38,7 @@ python install.py
 For this local Windows setup:
 
 ```powershell
-C:\Users\drbaph\Documents\ComfyUI\venv\Scripts\python.exe C:\Users\drbaph\Documents\ComfyUI\custom_nodes\Higgs_v3-TTS-ComfyUI\install.py
+...\venv\Scripts\python.exe ...\ComfyUI\custom_nodes\Higgs_v3-TTS-ComfyUI\install.py
 ```
 
 Restart ComfyUI after installing or updating.
