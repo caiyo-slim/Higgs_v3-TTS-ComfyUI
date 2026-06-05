@@ -1,16 +1,18 @@
+<img width="1006" height="78" alt="logo" src="https://github.com/user-attachments/assets/02fde121-2666-4119-83dd-0931e40610b8" />
+
 # Higgs_v3-TTS-ComfyUI
 
 **[English](./README.md)** | **中文**
 
-**版本：v0.1.0**
-
 [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b) 的 ComfyUI 原生节点：多语言对话式 TTS、零样本语音克隆、内联情感/风格/韵律/音效标签、长文本分块、多说话人对话、Whisper 参考音频转写，以及 ComfyUI/AIMDO 显存追踪。
 
-[![Version](https://img.shields.io/badge/version-v0.1.0-blue)](#)
 [![ComfyUI](https://img.shields.io/badge/ComfyUI-Custom%20Node-orange)](https://github.com/comfyanonymous/ComfyUI)
 [![Hugging Face](https://img.shields.io/badge/HuggingFace-bosonai%2Fhiggs--audio--v3--tts--4b-blue)](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b)
 
 > 许可说明：Higgs Audio v3 TTS 由 Boson AI 发布，仅供研究和非商业用途。未经许可请勿使用语音克隆功能。
+
+<img width="1077" height="1115" alt="Screenshot 2026-06-05 041705" src="https://github.com/user-attachments/assets/64d17c30-80c5-42b1-8d5a-2d98ebbc45ee" />
+
 
 ## 功能特性
 
@@ -30,7 +32,7 @@
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone <此仓库地址> Higgs_v3-TTS-ComfyUI
+git clone https://github.com/Saganaki22/Higgs_v3-TTS-ComfyUI.git
 cd Higgs_v3-TTS-ComfyUI
 python install.py
 ```
@@ -38,7 +40,7 @@ python install.py
 本地 Windows 环境使用：
 
 ```powershell
-C:\Users\drbaph\Documents\ComfyUI\venv\Scripts\python.exe C:\Users\drbaph\Documents\ComfyUI\custom_nodes\Higgs_v3-TTS-ComfyUI\install.py
+...\venv\Scripts\python.exe ...\ComfyUI\custom_nodes\Higgs_v3-TTS-ComfyUI\install.py
 ```
 
 安装或更新后请重启 ComfyUI。
