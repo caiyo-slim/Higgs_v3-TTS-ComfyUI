@@ -225,6 +225,25 @@ Example:
 <|emotion:amusement|>Wait, that was actually funny.
 ```
 
+#### Preserving the cloned voice with strong emotions
+
+Strong emotion tags can overpower the reference-speaker conditioning when they are the first token, causing the cloned voice to drift. This has been observed with `<|emotion:sadness|>`, while milder tags such as `<|emotion:amusement|>` may preserve the speaker correctly at the start.
+
+For stronger emotions, let Higgs establish the cloned speaker with at least one word before the tag:
+
+```text
+This <|emotion:sadness|>is a short test sentence to test the text to speech.
+```
+
+Put the next word directly after the tag, without a space:
+
+```text
+Recommended: <|emotion:sadness|>is
+Avoid:       <|emotion:sadness|> is
+```
+
+This is a known model limitation rather than the Voice Clone node selecting a random speaker. The reference audio and `reference_text` are still supplied to the model.
+
 ### Style
 
 `singing`, `shouting`, `whispering`
@@ -267,6 +286,18 @@ That was perfect. <|sfx:laughter|>Haha, absolutely perfect.
 - `<|prosody:long_pause|>` - Longer pause, about 700-1500 ms.
 - `<|prosody:expressive_high|>` - More expressive delivery.
 - `<|prosody:expressive_low|>` - Flatter delivery.
+
+#### Verifying speed controls
+
+For a controlled comparison, use an exact `reference_text`, clean single-speaker reference audio, fixed seed `12345`, `temperature=0.8`, `top_p=1.0`, `top_k=50`, `max_new_tokens=1024`, and disable longform chunking. Generate both prompts with the same settings:
+
+```text
+<|prosody:speed_very_slow|>This is a short test sentence to test the text to speech of Higgs audio version 3 text to speech voice clone node by Saganaki 22
+
+<|prosody:speed_very_fast|>This is a short test sentence to test the text to speech of Higgs audio version 3 text to speech voice clone node by Saganaki 22
+```
+
+In one verified test, `speed_very_slow` produced about 9 seconds of audio and `speed_very_fast` produced about 7 seconds. Exact durations depend on the reference voice and sampling, so compare them using the same fixed seed rather than expecting an exact duration.
 
 ## Longform Chunking
 
@@ -341,6 +372,12 @@ Use `longform_chunking=True` for long text. The node now avoids the misleading `
 ### Voice clone sounds weak
 
 Provide a clean reference clip and a correct `reference_text`. Whisper can help, but a manually corrected transcript is better.
+
+If a strong emotion tag at the beginning changes the cloned voice, place it after the first word and attach the next word directly to the tag:
+
+```text
+This <|emotion:sadness|>is a short test sentence.
+```
 
 ### SFX does not trigger
 

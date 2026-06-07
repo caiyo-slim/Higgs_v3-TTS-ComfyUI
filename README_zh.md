@@ -225,6 +225,25 @@ WER/CER 在 5 到 10 之间，共 17 种语言：
 <|emotion:amusement|>等等，那真的好好笑。
 ```
 
+#### 使用强烈情感时保持克隆音色
+
+当强烈情感标签作为第一个 token 时，它可能压过参考说话人的条件信息，导致克隆音色发生漂移。已观察到 `<|emotion:sadness|>` 可能出现这种情况，而 `<|emotion:amusement|>` 等较温和的标签放在开头时可能仍能正确保持说话人。
+
+对于较强的情感，先让 Higgs 用至少一个词建立克隆说话人的音色，再放置标签：
+
+```text
+This <|emotion:sadness|>is a short test sentence to test the text to speech.
+```
+
+标签后应直接连接下一个词，不要添加空格：
+
+```text
+推荐：<|emotion:sadness|>is
+避免：<|emotion:sadness|> is
+```
+
+这是已知的模型限制，并不是 Voice Clone 节点随机选择了其他说话人。参考音频和 `reference_text` 仍然会正常传递给模型。
+
 ### 风格
 
 `singing`（唱歌）、`shouting`（喊叫）、`whispering`（耳语）
@@ -267,6 +286,18 @@ WER/CER 在 5 到 10 之间，共 17 种语言：
 - `<|prosody:long_pause|>` - 较长停顿，约 700-1500 毫秒。
 - `<|prosody:expressive_high|>` - 更有表现力的演绎。
 - `<|prosody:expressive_low|>` - 更平淡的演绎。
+
+#### 验证语速控制
+
+进行可控对比时，请使用准确的 `reference_text`、干净的单说话人参考音频、固定种子 `12345`、`temperature=0.8`、`top_p=1.0`、`top_k=50`、`max_new_tokens=1024`，并关闭长文本分块。使用完全相同的设置生成以下两个提示：
+
+```text
+<|prosody:speed_very_slow|>This is a short test sentence to test the text to speech of Higgs audio version 3 text to speech voice clone node by Saganaki 22
+
+<|prosody:speed_very_fast|>This is a short test sentence to test the text to speech of Higgs audio version 3 text to speech voice clone node by Saganaki 22
+```
+
+在一次已验证的测试中，`speed_very_slow` 生成了约 9 秒音频，`speed_very_fast` 生成了约 7 秒音频。实际时长取决于参考音色和采样结果，因此应使用相同的固定种子进行对比，而不是期待固定的精确时长。
 
 ## 长文本分块
 
@@ -341,6 +372,12 @@ model.safetensors
 ### 语音克隆效果不佳
 
 提供干净的参考音频片段和正确的 `reference_text`。Whisper 可以辅助，但人工校正的转写效果更好。
+
+如果放在开头的强烈情感标签改变了克隆音色，请将标签移到第一个词之后，并让下一个词直接紧跟标签：
+
+```text
+This <|emotion:sadness|>is a short test sentence.
+```
 
 ### 音效未触发
 
