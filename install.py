@@ -15,6 +15,7 @@ LIGHTWEIGHT_IMPORTS = {
     "tokenizers": "tokenizers",
     "accelerate": "accelerate",
     "numpy": "numpy",
+    "tqdm": "tqdm",
 }
 
 

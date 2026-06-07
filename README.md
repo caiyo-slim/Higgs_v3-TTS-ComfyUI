@@ -4,7 +4,7 @@
 
 **English** | **[中文](./README_zh.md)**
 
-**Version: v0.1.3**
+**Version: v0.1.4**
 
 ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b): multilingual conversational TTS, zero-shot voice cloning, inline emotion/style/prosody/SFX tags, longform chunking, multi-speaker dialogue, Whisper reference transcription, and ComfyUI/AIMDO memory tracking.
 
@@ -328,7 +328,13 @@ During generation, the node logs progress in the ComfyUI terminal:
 - longform chunk count;
 - chunk number and preview text;
 - multi-speaker turn number and speaker id;
-- periodic audio-token progress such as `Higgs v3 audio tokens [##----------------------] 128/2048`.
+- an in-place `tqdm` audio-token bar with percentage, elapsed time, ETA, and token rate:
+
+```text
+Higgs v3 audio tokens: 64%|████████████████████████▋             | 1310/2048 [00:39<00:21, 34.52tok/s]
+```
+
+If the model emits its natural stop token before `max_new_tokens`, the completed bar adjusts to the actual generated token count and finishes at 100%.
 
 The ComfyUI UI progress bar is also updated at chunk/turn level.
 

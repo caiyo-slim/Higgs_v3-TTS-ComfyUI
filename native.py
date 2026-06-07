@@ -19,6 +19,10 @@ import torchaudio
 from safetensors import safe_open
 from tokenizers import Tokenizer
 from torch import nn
+try:
+    from tqdm import tqdm
+except ImportError:
+    tqdm = None
 from transformers import (
     HiggsAudioV2TokenizerConfig,
     HiggsAudioV2TokenizerModel,
@@ -37,13 +41,6 @@ AUDIO_PLACEHOLDER_ID = -100
 SAMPLE_RATE = 24_000
 CODEC_PREFIX = "tied.embedding.modality_embeddings.0.model."
 CODEC_CONFIG_PATH = Path(__file__).resolve().parent / "assets" / "higgs_audio_v2_tokenizer_config.json"
-
-
-def _text_progress_bar(current: int, total: int, width: int = 24) -> str:
-    total = max(1, int(total))
-    current = max(0, min(int(current), total))
-    filled = round(width * current / total)
-    return "[" + "#" * filled + "-" * (width - filled) + "]"
 
 
 class HiggsFusedMultiTextEmbedding(nn.Module):
@@ -282,39 +279,54 @@ class HiggsNativeTTS(nn.Module):
         hidden = out.last_hidden_state[:, -1, :]
         state = HiggsSamplerState(num_codebooks=self.num_codebooks)
         rows: list[torch.Tensor] = []
+        terminal_progress = (
+            tqdm(
+                total=int(max_new_tokens),
+                desc="Higgs v3 audio tokens",
+                unit="tok",
+                ascii=False,
+                dynamic_ncols=True,
+                leave=True,
+            )
+            if tqdm is not None
+            else None
+        )
 
-        for i in range(int(max_new_tokens)):
-            logits = self.modality_head.generate(hidden)[0].to(torch.float32)
-            codes = sampler_step(
-                logits,
-                state,
-                temperature=float(temperature),
-                top_p=top_p,
-                top_k=top_k,
-            )
-            if int(codes[0].item()) != STOP_CODE:
-                rows.append(codes.detach().to("cpu", torch.long))
-            if progress_callback is not None and (i == 0 or (i + 1) % 8 == 0 or state.generation_done):
-                progress_callback(i + 1, int(max_new_tokens))
-            if i == 0 or (i + 1) % 128 == 0 or state.generation_done:
-                logger.info(
-                    "Higgs v3 audio tokens %s %d/%d",
-                    _text_progress_bar(i + 1, int(max_new_tokens)),
-                    i + 1,
-                    int(max_new_tokens),
+        try:
+            for i in range(int(max_new_tokens)):
+                logits = self.modality_head.generate(hidden)[0].to(torch.float32)
+                codes = sampler_step(
+                    logits,
+                    state,
+                    temperature=float(temperature),
+                    top_p=top_p,
+                    top_k=top_k,
                 )
-            if state.generation_done:
-                break
-            if state.last_codes is None:
-                break
-            next_embed = self.modality_embedding(state.last_codes.view(1, -1)).view(1, 1, -1)
-            out = self.backbone.model(
-                inputs_embeds=next_embed.to(device=device, dtype=prompt_embeds.dtype),
-                past_key_values=past,
-                use_cache=True,
-            )
-            past = out.past_key_values
-            hidden = out.last_hidden_state[:, -1, :]
+                if int(codes[0].item()) != STOP_CODE:
+                    rows.append(codes.detach().to("cpu", torch.long))
+                if terminal_progress is not None:
+                    terminal_progress.update(1)
+                if progress_callback is not None and (i == 0 or (i + 1) % 8 == 0 or state.generation_done):
+                    progress_callback(i + 1, int(max_new_tokens))
+                if tqdm is None and (i == 0 or (i + 1) % 128 == 0 or state.generation_done):
+                    logger.info("Higgs v3 audio tokens %d/%d", i + 1, int(max_new_tokens))
+                if state.generation_done:
+                    if terminal_progress is not None and terminal_progress.n < terminal_progress.total:
+                        terminal_progress.total = terminal_progress.n
+                    break
+                if state.last_codes is None:
+                    break
+                next_embed = self.modality_embedding(state.last_codes.view(1, -1)).view(1, 1, -1)
+                out = self.backbone.model(
+                    inputs_embeds=next_embed.to(device=device, dtype=prompt_embeds.dtype),
+                    past_key_values=past,
+                    use_cache=True,
+                )
+                past = out.past_key_values
+                hidden = out.last_hidden_state[:, -1, :]
+        finally:
+            if terminal_progress is not None:
+                terminal_progress.close()
 
         if len(rows) < self.num_codebooks:
             raise RuntimeError(f"Higgs generated too few audio token rows ({len(rows)}).")
