@@ -28,6 +28,7 @@ except Exception:
 
 
 MAX_SPEAKERS = 6
+PROGRESS_UNITS_PER_SEGMENT = 1000
 DELIVERY_PROSODY_VALUES = {
     "speed_very_slow",
     "speed_slow",
@@ -146,7 +147,7 @@ def _generation_controls() -> dict:
                 "default": 0,
                 "min": 0,
                 "max": 2**31 - 1,
-                "tooltip": "0 uses the current random state. Set a positive number for repeatable phrasing.",
+                "tooltip": "0 uses the current random state. A positive value is repeatable and is reused unchanged for every longform chunk.",
             },
         ),
         "longform_chunking": (
@@ -334,6 +335,13 @@ def _generate_chunked_audio(
     if not bool(longform_chunking):
         prompt_text = control_prefix + text
         logger.info("Higgs v3 generating single pass: %s", text[:90])
+
+        def update_single_pass(current: int, total: int) -> None:
+            if progress_callback is None:
+                return
+            fraction = min(1.0, max(0.0, float(current) / max(1, int(total))))
+            progress_callback(round(fraction * PROGRESS_UNITS_PER_SEGMENT), PROGRESS_UNITS_PER_SEGMENT)
+
         audio = generate_higgs_audio(
             higgs_model,
             text=prompt_text,
@@ -348,10 +356,10 @@ def _generate_chunked_audio(
             trim_reference_audio=True,
             silence_threshold_db=-42.0,
             max_reference_seconds=100.0,
-            progress_callback=None,
+            progress_callback=update_single_pass,
         )
         if progress_callback is not None:
-            progress_callback(1, 1)
+            progress_callback(PROGRESS_UNITS_PER_SEGMENT, PROGRESS_UNITS_PER_SEGMENT)
         return audio
 
     chunks = _smart_chunk_text(text, int(words_per_chunk), bool(longform_chunking))
@@ -367,12 +375,28 @@ def _generate_chunked_audio(
     delivery_state = _delivery_state_from_prefix(control_prefix)
     active_reference_audio = reference_audio
     active_reference_text = reference_text
+    progress_total = len(chunks) * PROGRESS_UNITS_PER_SEGMENT
     for index, chunk in enumerate(chunks):
-        local_seed = int(seed) + index if seed else 0
+        local_seed = int(seed) if seed else 0
         skip_categories = _initial_delivery_categories(chunk)
-        active_prefix = control_prefix if control_prefix else _delivery_state_prefix(delivery_state, skip_categories)
+        if index == 0 and control_prefix:
+            active_prefix = control_prefix
+        else:
+            # Strong emotions can overpower clone conditioning when automatically
+            # inserted at the start of every later chunk, so emotions stay local.
+            active_prefix = _delivery_state_prefix(delivery_state, skip_categories | {"emotion"})
         prompt_text = active_prefix + chunk
         logger.info("Higgs v3 generating chunk %d/%d: %s", index + 1, len(chunks), chunk[:90])
+
+        def update_chunk(current: int, total: int, chunk_index: int = index) -> None:
+            if progress_callback is None:
+                return
+            fraction = min(1.0, max(0.0, float(current) / max(1, int(total))))
+            value = chunk_index * PROGRESS_UNITS_PER_SEGMENT + round(
+                fraction * PROGRESS_UNITS_PER_SEGMENT
+            )
+            progress_callback(value, progress_total)
+
         segment = generate_higgs_audio(
             higgs_model,
             text=prompt_text,
@@ -387,7 +411,7 @@ def _generate_chunked_audio(
             trim_reference_audio=True,
             silence_threshold_db=-42.0,
             max_reference_seconds=100.0,
-            progress_callback=None,
+            progress_callback=update_chunk,
         )
         segments.append(segment)
         if (
@@ -401,7 +425,7 @@ def _generate_chunked_audio(
             logger.info("Higgs v3 longform voice anchor: using chunk 1 as reference for later chunks.")
         _update_delivery_state_from_text(delivery_state, chunk)
         if progress_callback is not None:
-            progress_callback(index + 1, len(chunks))
+            progress_callback((index + 1) * PROGRESS_UNITS_PER_SEGMENT, progress_total)
     return _concat_audio_segments(segments, pause_between_chunks if len(segments) > 1 else 0.0)
 
 
@@ -510,7 +534,7 @@ class HiggsV3Generate:
         words_per_chunk: int,
         pause_between_chunks: float,
     ) -> tuple[dict]:
-        pbar = ProgressBar(1) if ProgressBar is not None else None
+        pbar = ProgressBar(PROGRESS_UNITS_PER_SEGMENT) if ProgressBar is not None else None
 
         def update_progress(current: int, total: int) -> None:
             if pbar is not None:
@@ -581,7 +605,7 @@ class HiggsV3VoiceClone:
         words_per_chunk: int,
         pause_between_chunks: float,
     ) -> tuple[dict]:
-        pbar = ProgressBar(1) if ProgressBar is not None else None
+        pbar = ProgressBar(PROGRESS_UNITS_PER_SEGMENT) if ProgressBar is not None else None
 
         def update_progress(current: int, total: int) -> None:
             if pbar is not None:
@@ -679,7 +703,7 @@ def _io_generation_inputs() -> list:
             default=0,
             min=0,
             max=2**31 - 1,
-            tooltip="0 uses the current random state. Set a positive value for repeatable phrasing.",
+            tooltip="0 uses the current random state. A positive value is repeatable and is reused unchanged for every longform chunk.",
         ),
         IO.Boolean.Input(
             "longform_chunking",
@@ -733,7 +757,7 @@ def _generate_multi_speaker_audio(
         if speaker_audio.get(speaker_idx) is None:
             raise ValueError(f"Missing reference audio for Speaker_{speaker_idx + 1}.")
 
-    pbar = ProgressBar(len(turns)) if ProgressBar is not None else None
+    pbar = ProgressBar(len(turns) * PROGRESS_UNITS_PER_SEGMENT) if ProgressBar is not None else None
     segments: list[dict] = []
     logger.info("Higgs v3 multi-speaker generation: %d turns, %d speakers.", len(turns), num_speakers)
     for index, (speaker_idx, line_text) in enumerate(turns):
@@ -745,6 +769,16 @@ def _generate_multi_speaker_audio(
             speaker_idx + 1,
             line_text[:90],
         )
+
+        def update_turn(current: int, total: int, turn_index: int = index) -> None:
+            if pbar is None:
+                return
+            fraction = min(1.0, max(0.0, float(current) / max(1, int(total))))
+            value = turn_index * PROGRESS_UNITS_PER_SEGMENT + round(
+                fraction * PROGRESS_UNITS_PER_SEGMENT
+            )
+            pbar.update_absolute(value, len(turns) * PROGRESS_UNITS_PER_SEGMENT)
+
         segments.append(
             _generate_chunked_audio(
                 higgs_model,
@@ -760,11 +794,14 @@ def _generate_multi_speaker_audio(
                 longform_chunking=bool(longform_chunking),
                 words_per_chunk=int(words_per_chunk),
                 pause_between_chunks=float(pause_between_chunks),
-                progress_callback=None,
+                progress_callback=update_turn,
             )
         )
         if pbar is not None:
-            pbar.update_absolute(index + 1, len(turns))
+            pbar.update_absolute(
+                (index + 1) * PROGRESS_UNITS_PER_SEGMENT,
+                len(turns) * PROGRESS_UNITS_PER_SEGMENT,
+            )
 
     return _concat_audio_segments(segments, float(pause_between_speakers))
 

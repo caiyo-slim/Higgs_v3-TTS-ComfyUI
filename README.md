@@ -4,7 +4,7 @@
 
 **English** | **[中文](./README_zh.md)**
 
-**Version: v0.1.4**
+**Version: v0.1.5**
 
 ComfyUI nodes for [bosonai/higgs-audio-v3-tts-4b](https://huggingface.co/bosonai/higgs-audio-v3-tts-4b): multilingual conversational TTS, zero-shot voice cloning, inline emotion/style/prosody/SFX tags, longform chunking, multi-speaker dialogue, Whisper reference transcription, and ComfyUI/AIMDO memory tracking.
 
@@ -113,7 +113,7 @@ The checkpoint is about **9.31 GB** on disk. Expect roughly **11 GB VRAM** for t
 | `temperature` | FLOAT | `1.0` | Sampling variety. `0` is greedy; `0.8-1.1` is usually natural. |
 | `top_p` | FLOAT | `0.95` | Nucleus sampling. `1.0` disables it. |
 | `top_k` | INT | `50` | Top-K codebook sampling. `0` disables it. |
-| `seed` | INT | `0` | `0` uses the current random state; positive values are repeatable. |
+| `seed` | INT | `0` | `0` uses the current random state; a positive seed is reused unchanged for every longform chunk. |
 | `longform_chunking` | BOOLEAN | `True` | Split long text safely at sentence/pause boundaries. When off, the node makes one direct generation call. |
 | `words_per_chunk` | INT | `45` | Target chunk size. Around 35-55 fits the 2048-token default better; CJK-like scripts use character-style splitting. |
 | `pause_between_chunks` | FLOAT | `0.15` | Silence inserted between generated chunks. |
@@ -213,7 +213,7 @@ Use inline tags when you want changes at specific moments:
 <|sfx:sigh|>Ahh, let's start over.
 ```
 
-Longform chunking preserves tags and avoids cutting inside `<|...|>`. For delivery tags such as emotion/style/speed/pitch/expressiveness, the chunker carries the latest active tag state into later chunks.
+Longform chunking preserves tags and avoids cutting inside `<|...|>`. Style and delivery-prosody tags such as speed, pitch, and expressiveness carry into later chunks. Emotion tags stay local to the chunk where they were written so a strong emotion is not automatically inserted at the beginning of every later chunk.
 
 ### Emotion
 
@@ -310,7 +310,9 @@ The chunker:
 - splits at sentence endings and `<|prosody:pause|>` / `<|prosody:long_pause|>`;
 - avoids cutting through `<|...|>` control tags;
 - avoids ending a chunk with a bare SFX/control tag;
-- carries active delivery tags into later chunks;
+- carries active style and delivery-prosody tags into later chunks;
+- keeps emotion tags local to the chunk where they appear;
+- reuses the same positive seed unchanged for every chunk;
 - inserts `pause_between_chunks` seconds of silence between chunks.
 
 Voice consistency:
@@ -336,7 +338,7 @@ Higgs v3 audio tokens: 64%|█████████████████�
 
 If the model emits its natural stop token before `max_new_tokens`, the completed bar adjusts to the actual generated token count and finishes at 100%.
 
-The ComfyUI UI progress bar is also updated at chunk/turn level.
+The ComfyUI node progress bar is updated continuously from native audio-token progress. For longform and multi-speaker generation, token progress is mapped across the full set of chunks and turns so the bar advances smoothly without resetting between segments.
 
 ## Attention Backends
 
@@ -395,4 +397,4 @@ Make sure the SFX tag is immediately followed by written sound text:
 
 ### Inline controls are ignored after chunking
 
-Use `longform_chunking=True` in v0.1.1 or newer. This version carries active delivery tags through chunks.
+Use `longform_chunking=True`. Style and delivery-prosody tags carry through chunks, but emotion tags intentionally remain local to avoid cloned-speaker drift. Add an emotion tag again inside any later chunk where you want that emotion applied.
